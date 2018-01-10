@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-
+//#include <filters.h>
 #include <gif_lib.h>
+
+#include <omp.h>
 
 #define SOBELF_DEBUG 0
 
@@ -573,6 +575,10 @@ store_pixels( char * filename, animated_gif * image )
     return 1 ;
 }
 
+
+//////////////////////////////////////////////HERE/////////////////////////////////////////////////////
+
+
 void
 apply_gray_filter( animated_gif * image )
 {
@@ -871,8 +877,28 @@ int main( int argc, char ** argv )
     /* Convert the pixels into grayscale */
     apply_gray_filter( image ) ;
 
+    /* FILTER Timer stop */
+    gettimeofday(&t2, NULL);
+
+    duration = (t2.tv_sec -t1.tv_sec)+((t2.tv_usec-t1.tv_usec)/1e6);
+
+    printf( "GRAY_FILTER done in %lf s\n", duration ) ;
+
+    /* FILTER Timer start */
+    gettimeofday(&t1, NULL);
+
     /* Apply blur filter with convergence value */
     apply_blur_filter( image, 5, 20 ) ;
+
+    /* FILTER Timer stop */
+    gettimeofday(&t2, NULL);
+
+    duration = (t2.tv_sec -t1.tv_sec)+((t2.tv_usec-t1.tv_usec)/1e6);
+
+    printf( "BLUR_FILTER done in %lf s\n", duration ) ;
+
+    /* FILTER Timer start */
+    gettimeofday(&t1, NULL);
 
     /* Apply sobel filter on pixels */
     apply_sobel_filter( image ) ;
@@ -882,7 +908,7 @@ int main( int argc, char ** argv )
 
     duration = (t2.tv_sec -t1.tv_sec)+((t2.tv_usec-t1.tv_usec)/1e6);
 
-    printf( "SOBEL done in %lf s\n", duration ) ;
+    printf( "SOBEL_FILTER done in %lf s\n", duration ) ;
 
     /* EXPORT Timer start */
     gettimeofday(&t1, NULL);
