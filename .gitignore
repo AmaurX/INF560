@@ -5,6 +5,7 @@ obj/
 # Ignore output
 sobelf
 
-# keep one reference version on the repo  - ignore all other processed images 
+# Keep one reference version of the processed images in ref-processed
+# Ignore all other processed images 
 images/processed
-!images/processed/reference
+
