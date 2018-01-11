@@ -1,0 +1,10 @@
+# Standard C ignore
+obj/
+**/*.o
+
+# Ignore output
+sobelf
+
+# keep one reference version on the repo  - ignore all other processed images 
+images/processed
+!images/processed/reference
