@@ -9,3 +9,5 @@ sobelf
 # Ignore all other processed images 
 images/processed
 
+# IDE config
+.vscode/
