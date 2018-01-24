@@ -1,3 +1,6 @@
+# IDE config
+.vscode/
+
 # Standard C ignore
 obj/
 **/*.o
@@ -9,5 +12,3 @@ sobelf
 # Ignore all other processed images 
 images/processed
 
-# IDE config
-.vscode/
