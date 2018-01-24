@@ -6,6 +6,8 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include "main.h"
+
 #define CONV(l, c, nb_c) \
     (l) * (nb_c) + (c)
 
