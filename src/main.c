@@ -16,6 +16,21 @@
 #include "gif_utils.h"
 #include "filters.h"
 
+void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image)
+{
+    int compteur = numberOfProcess;
+    int i = 1;
+    workgroupList[0] = 1;
+
+    while (compteur >= 4 && i < image->n_images - 1)
+    {
+        workgroupList[i] = 4;
+        compteur -= 4;
+    }
+
+    workgroupList[image->n_images - 1] = compteur;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -25,6 +40,9 @@ int main(int argc, char **argv)
     struct timeval t1, t2;
     double duration;
 
+    // MPI STARTS HERE
+    MPI_INIT(&argc, &argv);
+
     if (argc < 3)
     {
         fprintf(stderr, "Usage: %s input.gif output.gif \n", argv[0]);
@@ -33,6 +51,8 @@ int main(int argc, char **argv)
 
     input_filename = argv[1];
     output_filename = argv[2];
+
+    //
 
     /* IMPORT Timer start */
     gettimeofday(&t1, NULL);
