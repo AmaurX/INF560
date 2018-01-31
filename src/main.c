@@ -11,6 +11,7 @@
 //#include <filters.h>
 #include <gif_lib.h>
 #include <omp.h>
+#include <mpi.h>
 
 #include "main.h"
 #include "gif_utils.h"
@@ -18,6 +19,8 @@
 
 int main(int argc, char **argv)
 {
+
+    MPI_Init(&argc, &argv);
 
     char *input_filename;
     char *output_filename;
