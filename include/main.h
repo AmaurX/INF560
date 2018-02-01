@@ -8,6 +8,7 @@
 #define MAIN_H
 
 #include <gif_lib.h>
+#include <mpi.h>
 
 #define SOBELF_DEBUG 0
 
@@ -37,6 +38,9 @@ typedef struct task
     int width;  /* Width of each image */
     int height; /* Height of each image */
 } task;
+
+MPI_Datatype MPI_CUSTOM_PIXEL;
+MPI_Datatype MPI_CUSTOM_TASK;
 
 /**
  * \brief computes

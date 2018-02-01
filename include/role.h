@@ -11,13 +11,14 @@ enum role
     master,
     groupmaster,
     slave,
-};
+} role;
+
 #define TASK_TAG 0
 #define IMAGE_TAG 1
 
-int giveRoleInGroup(int rankGroup);
+enum role giveRoleInGroup(int rankGroup);
 
-void masterLoop(MPI_Comm *groupCommList);
+void masterLoop(MPI_Comm *groupCommList, animated_gif *image);
 
 void groupMasterLoop(MPI_Comm groupComm);
 
