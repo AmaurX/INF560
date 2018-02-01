@@ -12,3 +12,6 @@ sobelf
 # Ignore all other processed images 
 images/processed
 
+# Ignore doc output
+doc/
+
