@@ -16,6 +16,7 @@
 #include "main.h"
 #include "gif_utils.h"
 #include "filters.h"
+#include "role.h"
 
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image)
 {
@@ -37,6 +38,23 @@ int main(int argc, char **argv)
 
     MPI_Init(&argc, &argv);
 
+    // Add a MPI_Type_struct
+    MPI_Datatype MPI_CUSTOM_TASK;
+    int blocksizes[] = {4, 4, 4, 4};
+    MPI_Aint displacements[] = {0, 0, 0, 0};
+    MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Type_create_struct(4, blocksizes, displacements,
+                           types, &MPI_CUSTOM_TASK);
+    MPI_Type_commit(&MPI_CUSTOM_TASK);
+
+    MPI_Datatype MPI_CUSTOM_PIXEL;
+    int blocksizes2[] = {4, 4, 4};
+    MPI_Aint displacements2[] = {0, 0, 0};
+    MPI_Datatype types2[] = {MPI_INT, MPI_INT, MPI_INT};
+    MPI_Type_create_struct(3, blocksizes2, displacements2,
+                           types2, &MPI_CUSTOM_PIXEL);
+    MPI_Type_commit(&MPI_CUSTOM_PIXEL);
+
     char *input_filename;
     char *output_filename;
     animated_gif *image;
@@ -44,7 +62,7 @@ int main(int argc, char **argv)
     double duration;
 
     // MPI STARTS HERE
-    MPI_INIT(&argc, &argv);
+    MPI_Init(&argc, &argv);
 
     if (argc < 3)
     {
