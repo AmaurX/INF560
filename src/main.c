@@ -11,11 +11,11 @@
 //#include <filters.h>
 #include <gif_lib.h>
 #include <omp.h>
-#include <mpi.h>
 
 #include "main.h"
 #include "gif_utils.h"
 #include "filters.h"
+#include "role.h"
 
 void testProcessAttribution()
 {
@@ -109,6 +109,21 @@ int main(int argc, char **argv)
 {
     int rankWorld, commWorldSize, groupIndex;
     MPI_Comm groupComm;
+
+    // Add a MPI_Type_struct
+    int blocksizes[] = {4, 4, 4, 4};
+    MPI_Aint displacements[] = {0, 0, 0, 0};
+    MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+    MPI_Type_create_struct(4, blocksizes, displacements,
+                           types, &MPI_CUSTOM_TASK);
+    MPI_Type_commit(&MPI_CUSTOM_TASK);
+
+    int blocksizes2[] = {4, 4, 4};
+    MPI_Aint displacements2[] = {0, 0, 0};
+    MPI_Datatype types2[] = {MPI_INT, MPI_INT, MPI_INT};
+    MPI_Type_create_struct(3, blocksizes2, displacements2,
+                           types2, &MPI_CUSTOM_PIXEL);
+    MPI_Type_commit(&MPI_CUSTOM_PIXEL);
 
     char *input_filename;
     char *output_filename;

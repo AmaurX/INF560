@@ -16,7 +16,8 @@ SRC= dgif_lib.c \
 	openbsd-reallocarray.c \
 	quantize.c \
 	gif_utils.c \
-	filters.c
+	filters.c \
+	role.c
 
 OBJ= $(OBJ_DIR)/dgif_lib.o \
 	$(OBJ_DIR)/egif_lib.o \
@@ -28,7 +29,8 @@ OBJ= $(OBJ_DIR)/dgif_lib.o \
 	$(OBJ_DIR)/openbsd-reallocarray.o \
 	$(OBJ_DIR)/quantize.o \
 	$(OBJ_DIR)/gif_utils.o \
-	$(OBJ_DIR)/filters.o
+	$(OBJ_DIR)/filters.o \
+	$(OBJ_DIR)/role.o
 
 all: $(OBJ_DIR) sobelf
 
