@@ -47,6 +47,6 @@ typedef struct task
 */
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
 
-int whichCommunicator(int *workgroupList, int rankWorld);
+int whichCommunicator(int *workgroupList, int listSize, int rankWorld);
 
 #endif

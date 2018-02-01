@@ -17,25 +17,98 @@
 #include "gif_utils.h"
 #include "filters.h"
 
+void testProcessAttribution()
+{
+    const int frameCard = 3;
+    const int processCard = 3;
+    int nFrameList[] = {1, 4, 40};
+    int nProcessList[] = {2, 8, 40};
+    for (int i = 0; i < frameCard; i++)
+    {
+        for (int j = 0; j < processCard; j++)
+        {
+            int nFrame = nFrameList[i];
+            int nProcess = nProcessList[j];
+            printf("================================\n"
+                   "===== test with M=%d L=%d ======\n", nProcessList[j], nFrame);
+            int nMaxGroup = nFrame + 1;
+            int *workgroupList = (int *)calloc(nMaxGroup, sizeof(int));
+            animated_gif fakeImage = {
+                .n_images = nFrame};
+            attributeNumberOfProcess(workgroupList, nProcessList[j], &fakeImage);
+
+            for (int k = 0; k < nMaxGroup; k++)
+            {
+                printf("%d ", workgroupList[k]);
+            }
+            printf("\n Attribution:\n");
+
+            int* groupAttribution = (int*)calloc(nProcess, sizeof(int));
+            for(int k=0 ; k<nProcess ; k++){
+                printf("%d ", whichCommunicator(workgroupList, nMaxGroup, k));
+            }
+            printf("\n");
+
+
+            free(workgroupList);
+            free(groupAttribution);
+        }
+    }
+}
+
+/**
+ * \brief assign processes to groups
+ * 
+ * returned tab is of the form [1, x, y, ..] because first index is for the MASTER group
+ */
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image)
 {
-    int compteur = numberOfProcess;
+    if (numberOfProcess < 2)
+    {
+        fprintf(stderr, "Too few processes. Aborting\n");
+        return;
+    }
+    int maxGroup = image->n_images + 1;
+    int freeProcess = numberOfProcess - 1;
+    int compteur = image->n_images;
     int i = 1;
     workgroupList[0] = 1;
 
-    while (compteur >= 4 && i < image->n_images - 1)
+    while (freeProcess > 0)
     {
-        workgroupList[i] = 4;
-        compteur -= 4;
+        workgroupList[i]++;
+        if (workgroupList[i] == 4 && i + 1 < maxGroup)
+        {
+            //next group
+            i++;
+        }
+        freeProcess--;
     }
 
-    workgroupList[image->n_images - 1] = compteur;
+    // while (compteur >= 4 && i < image->n_images - 1)
+    // {
+    //     workgroupList[i] = 4;
+    //     compteur -= 4;
+    // }
+
+    // workgroupList[image->n_images - 1] = compteur;
+}
+
+int whichCommunicator(int *workgroupList, int listSize, int rankWorld)
+{
+    int comm = 0;
+    while (rankWorld >= 0 && comm < listSize)
+    {
+        rankWorld -= workgroupList[comm];
+        comm++;
+    }
+    return comm-1;
 }
 
 int main(int argc, char **argv)
 {
-
-    MPI_Init(&argc, &argv);
+    int rankWorld, commWorldSize, groupIndex;
+    MPI_Comm groupComm;
 
     char *input_filename;
     char *output_filename;
@@ -44,7 +117,7 @@ int main(int argc, char **argv)
     double duration;
 
     // MPI STARTS HERE
-    MPI_INIT(&argc, &argv);
+    MPI_Init(&argc, &argv);
 
     if (argc < 3)
     {
@@ -52,10 +125,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    input_filename = argv[1];
+    input_filename = argv[1];   
     output_filename = argv[2];
 
-    //
+    MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
 
     /* IMPORT Timer start */
     gettimeofday(&t1, NULL);
@@ -75,60 +149,71 @@ int main(int argc, char **argv)
     printf("GIF loaded from file %s with %d image(s) in %lf s\n",
            input_filename, image->n_images, duration);
 
-    /* FILTER Timer start */
-    gettimeofday(&t1, NULL);
-
-    /* Convert the pixels into grayscale */
-    apply_gray_filter(image);
-
-    /* FILTER Timer stop */
-    gettimeofday(&t2, NULL);
-
-    duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
-
-    printf("GRAY_FILTER done in %lf s\n", duration);
-
-    /* FILTER Timer start */
-    gettimeofday(&t1, NULL);
-
-    /* Apply blur filter with convergence value */
-    apply_blur_filter(image, 5, 20);
-
-    /* FILTER Timer stop */
-    gettimeofday(&t2, NULL);
-
-    duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
-
-    printf("BLUR_FILTER done in %lf s\n", duration);
-
-    /* FILTER Timer start */
-    gettimeofday(&t1, NULL);
-
-    /* Apply sobel filter on pixels */
-    apply_sobel_filter(image);
-
-    /* FILTER Timer stop */
-    gettimeofday(&t2, NULL);
-
-    duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
-
-    printf("SOBEL_FILTER done in %lf s\n", duration);
-
-    /* EXPORT Timer start */
-    gettimeofday(&t1, NULL);
-
-    /* Store file from array of pixels to GIF file */
-    if (!store_pixels(output_filename, image))
+    if (rankWorld == 0)
     {
-        return 1;
+        printf("Hello from thread %d/%d\n", rankWorld, commWorldSize);
+        testProcessAttribution();
     }
 
-    /* EXPORT Timer stop */
-    gettimeofday(&t2, NULL);
+    if (0)
+    {
 
-    duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+        /* FILTER Timer start */
+        gettimeofday(&t1, NULL);
 
-    printf("Export done in %lf s in file %s\n", duration, output_filename);
+        /* Convert the pixels into grayscale */
+        apply_gray_filter(image);
 
+        /* FILTER Timer stop */
+        gettimeofday(&t2, NULL);
+
+        duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+
+        printf("GRAY_FILTER done in %lf s\n", duration);
+
+        /* FILTER Timer start */
+        gettimeofday(&t1, NULL);
+
+        /* Apply blur filter with convergence value */
+        apply_blur_filter(image, 5, 20);
+
+        /* FILTER Timer stop */
+        gettimeofday(&t2, NULL);
+
+        duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+
+        printf("BLUR_FILTER done in %lf s\n", duration);
+
+        /* FILTER Timer start */
+        gettimeofday(&t1, NULL);
+
+        /* Apply sobel filter on pixels */
+        apply_sobel_filter(image);
+
+        /* FILTER Timer stop */
+        gettimeofday(&t2, NULL);
+
+        duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+
+        printf("SOBEL_FILTER done in %lf s\n", duration);
+
+        /* EXPORT Timer start */
+        gettimeofday(&t1, NULL);
+
+        /* Store file from array of pixels to GIF file */
+        if (!store_pixels(output_filename, image))
+        {
+            return 1;
+        }
+
+        /* EXPORT Timer stop */
+        gettimeofday(&t2, NULL);
+
+        duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+
+        printf("Export done in %lf s in file %s\n", duration, output_filename);
+    }
+
+    MPI_Finalize();
     return 0;
 }
