@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include "main.h"
+#include "filters.h"
+
 #include "role.h"
 
 enum role giveRoleInGroup(int rankGroup)
@@ -54,9 +56,9 @@ void groupMasterLoop(MPI_Comm groupComm)
         *singleFrameGif.p = image;
 
         // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
-        apply_gray_filter(&singleFrameGif);
-        apply_blur_filter(&singleFrameGif);
-        apply_sobel_filter(&singleFrameGif);
+        // apply_gray_filter(&singleFrameGif);
+        // apply_blur_filter(&singleFrameGif);
+        // apply_sobel_filter(&singleFrameGif);
 
         // SEND BACK TO MASTER
         MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,

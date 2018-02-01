@@ -11,6 +11,7 @@
 //#include <filters.h>
 #include <gif_lib.h>
 #include <omp.h>
+#include <mpi.h>
 
 #include "main.h"
 #include "gif_utils.h"
@@ -110,6 +111,14 @@ int main(int argc, char **argv)
     int rankWorld, commWorldSize, groupIndex;
     MPI_Comm groupComm;
 
+    // MPI STARTS HERE
+    MPI_Init(&argc, &argv);
+
+    if (argc < 3)
+    {
+        fprintf(stderr, "Usage: %s input.gif output.gif \n", argv[0]);
+        return 1;
+    }
     // Add a MPI_Type_struct
     int blocksizes[] = {4, 4, 4, 4};
     MPI_Aint displacements[] = {0, 0, 0, 0};
@@ -131,14 +140,6 @@ int main(int argc, char **argv)
     struct timeval t1, t2;
     double duration;
 
-    // MPI STARTS HERE
-    MPI_Init(&argc, &argv);
-
-    if (argc < 3)
-    {
-        fprintf(stderr, "Usage: %s input.gif output.gif \n", argv[0]);
-        return 1;
-    }
 
     input_filename = argv[1];   
     output_filename = argv[2];
