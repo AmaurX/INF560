@@ -43,5 +43,10 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c
 sobelf:$(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
+.PHONY: clean doc
+
 clean:
 	rm -f sobelf $(OBJ)
+
+doc:
+	doxygen doxy/Doxyfile.conf
