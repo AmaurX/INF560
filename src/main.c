@@ -31,7 +31,8 @@ void testProcessAttribution()
             int nFrame = nFrameList[i];
             int nProcess = nProcessList[j];
             printf("================================\n"
-                   "===== test with M=%d L=%d ======\n", nProcessList[j], nFrame);
+                   "===== test with M=%d L=%d ======\n",
+                   nProcessList[j], nFrame);
             int nMaxGroup = nFrame + 1;
             int *workgroupList = (int *)calloc(nMaxGroup, sizeof(int));
             animated_gif fakeImage = {
@@ -44,12 +45,12 @@ void testProcessAttribution()
             }
             printf("\n Attribution:\n");
 
-            int* groupAttribution = (int*)calloc(nProcess, sizeof(int));
-            for(int k=0 ; k<nProcess ; k++){
+            int *groupAttribution = (int *)calloc(nProcess, sizeof(int));
+            for (int k = 0; k < nProcess; k++)
+            {
                 printf("%d ", whichCommunicator(workgroupList, nMaxGroup, k));
             }
             printf("\n");
-
 
             free(workgroupList);
             free(groupAttribution);
@@ -103,13 +104,26 @@ int whichCommunicator(int *workgroupList, int listSize, int rankWorld)
         rankWorld -= workgroupList[comm];
         comm++;
     }
-    return comm-1;
+    return comm - 1;
 }
 
 int main(int argc, char **argv)
 {
     int rankWorld, commWorldSize, groupIndex;
+    /// GroupMaster or Slave ? everything lies in the value of that integer...
+    int groupRank;
+    /// Size of the work group
+    int groupSize;
+    /// Used to determine the role of the current process
+    enum role groupRole;
+    /// Group communicator ( MPI_COMM_NULL if master )
     MPI_Comm groupComm;
+
+    char *input_filename;
+    char *output_filename;
+    animated_gif *image;
+    struct timeval t1, t2;
+    double duration;
 
     // MPI STARTS HERE
     MPI_Init(&argc, &argv);
@@ -134,18 +148,8 @@ int main(int argc, char **argv)
                            types2, &MPI_CUSTOM_PIXEL);
     MPI_Type_commit(&MPI_CUSTOM_PIXEL);
 
-    char *input_filename;
-    char *output_filename;
-    animated_gif *image;
-    struct timeval t1, t2;
-    double duration;
-
-
-    input_filename = argv[1];   
+    input_filename = argv[1];
     output_filename = argv[2];
-
-    MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
 
     /* IMPORT Timer start */
     gettimeofday(&t1, NULL);
@@ -165,10 +169,42 @@ int main(int argc, char **argv)
     printf("GIF loaded from file %s with %d image(s) in %lf s\n",
            input_filename, image->n_images, duration);
 
+    MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
+
+    // process attribution
+    /// desperately under-optimized value
+    int listSize = image->n_images + 1;
+    int *workgroupList = (int *)calloc(listSize, sizeof(int));
+    attributeNumberOfProcess(workgroupList, commWorldSize, image);
+    groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
+    MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
+
     if (rankWorld == 0)
     {
-        printf("Hello from thread %d/%d\n", rankWorld, commWorldSize);
-        testProcessAttribution();
+        //master is working here
+        printf("Hello from thread master %d/%d\n", rankWorld, commWorldSize);
+        // testProcessAttribution();
+    }
+    else
+    {
+        //groupmaster & slaves
+        MPI_Comm_rank(groupComm, &groupRank);
+        MPI_Comm_size(groupComm, &groupSize);
+        enum role groupRole = giveRoleInGroup(groupRank);
+        if (groupRole == groupmaster)
+        {
+            // groupMaster loop
+            // do nothing.
+            // for now...
+            printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
+        }
+        else
+        {
+            // slave loop
+            // do nothing - but another way
+            printf("Hello from slave of group %d: (%d/%d), in world: %d/%d\n", groupIndex, groupRank, groupSize, rankWorld, commWorldSize);
+        }
     }
 
     if (0)

@@ -12,7 +12,7 @@
 
 #define SOBELF_DEBUG 0
 
-/* Represent one pixel from the image */
+/// \brief Represent one pixel from the image
 typedef struct pixel
 {
     int r; /* Red */
@@ -20,7 +20,7 @@ typedef struct pixel
     int b; /* Blue */
 } pixel;
 
-/* Represent one GIF image (animated or not */
+/// \brief Represent one GIF image (animated or not )
 typedef struct animated_gif
 {
     int n_images;   /* Number of images */
@@ -31,6 +31,7 @@ typedef struct animated_gif
                          DO NOT MODIFY */
 } animated_gif;
 
+/// \brief elemental task given to a workgroup
 typedef struct task
 {
     int id; /* -1 if no next task */
@@ -43,11 +44,9 @@ MPI_Datatype MPI_CUSTOM_PIXEL;
 MPI_Datatype MPI_CUSTOM_TASK;
 
 /**
- * \brief computes
+ * \brief computes the workGroup list
  * 
- * 
- * 
- * 
+ * This list helps positionning the process in the hierarchy 
 */
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
 

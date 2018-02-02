@@ -6,6 +6,10 @@
 
 #include <mpi.h>
 
+#define TASK_TAG 0
+#define IMAGE_TAG 1
+
+/// \brief hierarchical position of the process
 enum role
 {
     master,
@@ -13,8 +17,6 @@ enum role
     slave,
 } role;
 
-#define TASK_TAG 0
-#define IMAGE_TAG 1
 
 enum role giveRoleInGroup(int rankGroup);
 
