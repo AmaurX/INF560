@@ -16,6 +16,7 @@ enum role giveRoleInGroup(int rankGroup)
 
 void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image)
 {
+    printf("Entering master loop \n");
     int count = 0;
     int numberOfImages = image->n_images;
 
@@ -23,6 +24,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     int numberOfProcessedImages = 0;
     for (int i = 0; i < numberOfGroupMaster; i++)
     {
+        printf("Beginning first round of distribution \n");
         if (count < numberOfImages)
         {
             struct task newTask;
@@ -89,6 +91,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
 void groupMasterLoop(MPI_Comm groupComm)
 {
+    printf("Entering group master loop \n");
+
     while (true)
     {
         // RECEIVING FROM MASTER
