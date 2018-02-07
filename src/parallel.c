@@ -77,7 +77,11 @@ int parallel_process(char *input_filename, char *output_filename)
 		//master is working here
 		printf("Hello from thread master %d/%d\n", rankWorld, commWorldSize);
 		// testProcessAttribution();
-		masterLoop(, , image);
+
+		int numberOfGroupMaster;
+		int *groupMasterList = createGroupMasterList(workGroupList, commWorldSize, &numberOfGroupMaster);
+
+		masterLoop(groupMasterList, numberOfGroupMaster, image);
 
 		if (!store_pixels(output_filename, image))
 		{
