@@ -124,7 +124,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         {
             int rankWorld;
             MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
-            printf("Process %d exiting groupMasterLoop", rankWorld);
+            printf("\t\tGM: Process %d exiting groupMasterLoop\n", rankWorld);
             break;
         }
         printf("\t\tGM : Receiving frame %d\n", newTask.frameNumber);
