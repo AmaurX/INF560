@@ -44,8 +44,9 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
             MPI_Send((void *)(image->p[count]), numberOfPixels, MPI_CUSTOM_PIXEL,
                      (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
-            count++;
             printf("M: Sent frame %d on %d successfully\n", count, numberOfImages);
+
+            count++;
         }
     }
 
@@ -93,6 +94,16 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
                      sender, IMAGE_TAG, MPI_COMM_WORLD);
             count++;
         }
+    }
+
+    for (int i = 0; i < numberOfGroupMaster; i++)
+    {
+        struct task endTask;
+
+        endTask.id = -1;
+
+        MPI_Send((void *)&endTask, 1, MPI_CUSTOM_TASK,
+                 groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
     }
 }
 
