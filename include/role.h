@@ -17,10 +17,9 @@ enum role
     slave,
 } role;
 
-
 enum role giveRoleInGroup(int rankGroup);
 
-void masterLoop(MPI_Comm *groupCommList, animated_gif *image);
+void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image);
 
 void groupMasterLoop(MPI_Comm groupComm);
 
