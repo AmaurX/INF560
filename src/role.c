@@ -129,8 +129,10 @@ void groupMasterLoop(MPI_Comm groupComm)
         }
         printf("\t\tGM : Receiving frame %d\n", newTask.frameNumber);
 
+        // TODO: le segfault est au MPI_RECV dessous
         int numberOfPixels = newTask.height * newTask.width;
-        struct pixel *image = (struct pixel *)malloc(numberOfPixels * sizeof(pixel));
+        int sizeRequested = numberOfPixels * sizeof(struct pixel);
+        struct pixel *image = (struct pixel *)malloc(sizeRequested);
 
         MPI_Recv((void *)image, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);

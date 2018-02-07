@@ -106,6 +106,7 @@ int parallel_process(char *input_filename, char *output_filename)
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
 			if(groupRank == 0){
 				waitForDebug();
+				
 			}
 			groupMasterLoop(groupComm);
 		}
