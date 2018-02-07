@@ -115,7 +115,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         printf("Receiving frame %d\n", newTask.frameNumber);
 
         int numberOfPixels = newTask.height * newTask.width;
-        struct pixel *image = malloc(numberOfPixels * sizeof(pixel));
+        struct pixel *image = (struct pixel *)malloc(numberOfPixels * sizeof(pixel));
 
         MPI_Recv((void *)image, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);
@@ -125,9 +125,9 @@ void groupMasterLoop(MPI_Comm groupComm)
         // END OF RECEIVING PHASE
         animated_gif singleFrameGif;
         singleFrameGif.n_images = 1;
-        *singleFrameGif.height = newTask.height;
-        *singleFrameGif.width = newTask.width;
-        *singleFrameGif.p = image;
+        singleFrameGif.height = &(newTask.height);
+        singleFrameGif.width = &(newTask.width);
+        singleFrameGif.p = &(image);
 
         // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
         // apply_gray_filter(&singleFrameGif);
