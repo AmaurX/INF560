@@ -12,6 +12,10 @@
 
 #define SOBELF_DEBUG 0
 
+#define MODE_SEQUENTIAL 0
+#define MODE_PARALLEL 1
+#define MODE_TEST 2
+
 /// \brief Represent one pixel from the image
 typedef struct pixel
 {
@@ -51,5 +55,8 @@ MPI_Datatype MPI_CUSTOM_TASK;
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
 
 int whichCommunicator(int *workgroupList, int listSize, int rankWorld);
+
+int parallel_process(char *input_filename, char *output_filename);
+int sequential_process(char *input_filename, char *output_filename);
 
 #endif
