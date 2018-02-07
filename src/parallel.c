@@ -79,7 +79,7 @@ int parallel_process(char *input_filename, char *output_filename)
 		// testProcessAttribution();
 
 		int numberOfGroupMaster;
-		int *groupMasterList = createGroupMasterList(workGroupList, commWorldSize, &numberOfGroupMaster);
+		int *groupMasterList = createGroupMasterList(workgroupList, commWorldSize, &numberOfGroupMaster);
 
 		masterLoop(groupMasterList, numberOfGroupMaster, image);
 
