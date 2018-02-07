@@ -23,4 +23,4 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
 void groupMasterLoop(MPI_Comm groupComm);
 
-void slaveGroup(MPI_Comm groupComm);
+void slaveGroupLoop(MPI_Comm groupComm);

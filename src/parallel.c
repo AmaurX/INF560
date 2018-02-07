@@ -62,6 +62,8 @@ int parallel_process(char *input_filename, char *output_filename)
 	MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
 
+	gettimeofday(&t1, NULL);
+
 	// process attribution
 	/// desperately under-optimized value
 	int listSize = image->n_images + 1;
@@ -75,6 +77,16 @@ int parallel_process(char *input_filename, char *output_filename)
 		//master is working here
 		printf("Hello from thread master %d/%d\n", rankWorld, commWorldSize);
 		// testProcessAttribution();
+		masterLoop(, , image);
+
+		if (!store_pixels(output_filename, image))
+		{
+			return 1;
+		}
+		gettimeofday(&t2, NULL);
+
+		duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+		printf("Total work completed in %lf s\n", duration);
 	}
 	else
 	{
@@ -88,12 +100,14 @@ int parallel_process(char *input_filename, char *output_filename)
 			// do nothing.
 			// for now...
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
+			groupMasterLoop(groupComm);
 		}
 		else
 		{
 			// slave loop
 			// do nothing - but another way
 			printf("Hello from slave of group %d: (%d/%d), in world: %d/%d\n", groupIndex, groupRank, groupSize, rankWorld, commWorldSize);
+			slaveGroupLoop(groupComm);
 		}
 	}
 }

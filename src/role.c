@@ -132,6 +132,6 @@ void groupMasterLoop(MPI_Comm groupComm)
     }
 }
 
-void slaveGroup(MPI_Comm groupComm)
+void slaveGroupLoop(MPI_Comm groupComm)
 {
 }
