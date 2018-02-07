@@ -130,9 +130,9 @@ void groupMasterLoop(MPI_Comm groupComm)
         *singleFrameGif.p = image;
 
         // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
-        apply_gray_filter(&singleFrameGif);
-        apply_blur_filter(&singleFrameGif, 5, 20);
-        apply_sobel_filter(&singleFrameGif);
+        // apply_gray_filter(&singleFrameGif);
+        // apply_blur_filter(&singleFrameGif, 5, 20);
+        // apply_sobel_filter(&singleFrameGif);
 
         // SEND BACK TO MASTER
         printf("Sending treated frame %d back to master \n", newTask.frameNumber);
