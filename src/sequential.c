@@ -1,4 +1,9 @@
 #include <sys/time.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "gif_utils.h"
+#include "filters.h"
 
 #include "main.h"
 

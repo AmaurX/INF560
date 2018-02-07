@@ -3,7 +3,7 @@ HEADER_DIR=include
 OBJ_DIR=obj
 
 CC=mpicc
-CFLAGS=-O3 -I$(HEADER_DIR) -std=gnu99
+CFLAGS=-O3 -I$(HEADER_DIR) -std=gnu99 -g
 LDFLAGS=-lm
 
 SRC= dgif_lib.c \
@@ -63,3 +63,6 @@ test: all
 #parallel run
 run: all
 	mpirun sobelf 1 images/original/australian-flag-large.gif images/processed/__first.try
+
+massive:
+	salloc -N 5 -n 10 mpirun images/original/australian-flag-large.gif images/processed/__first.try
