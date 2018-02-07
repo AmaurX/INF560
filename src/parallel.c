@@ -146,3 +146,41 @@ int whichCommunicator(int *workgroupList, int listSize, int rankWorld)
 	}
 	return comm - 1;
 }
+
+int *createGroupMasterList(const int *workgroupList, const int workgroupListSize, int *gmListSizeOut)
+{
+	int groupNum = 0;
+	int currRank = 1;
+	// int *item = workgroupList + 1;
+	for (int i = 1; i < workgroupListSize; i++)
+	{
+		if (workgroupList[i] == 0)
+		{
+			break;
+		}
+		// printf("rank %d ", currRank);
+		currRank += workgroupList[i];
+		groupNum++;
+	}
+	// printf("\nSaw %d different groups\n", groupNum);
+
+	int *gmList = (int *)malloc(groupNum * sizeof(int));
+
+	groupNum = 0;
+	currRank = 1;
+	// int *item = workgroupList + 1;
+	for (int i = 1; i < workgroupListSize; i++)
+	{
+		if (workgroupList[i] == 0)
+		{
+			break;
+		}
+		// printf("rank %d ", currRank);
+		gmList[groupNum] = currRank;
+		currRank += workgroupList[i];
+		groupNum++;
+	}
+
+	*gmListSizeOut = groupNum;
+	return gmList;
+}

@@ -19,8 +19,6 @@
 #include "tests.h"
 #include "main.h"
 
-
-
 int main(int argc, char **argv)
 {
     char *input_filename;
@@ -32,9 +30,10 @@ int main(int argc, char **argv)
     if (argc < 4)
     {
         fprintf(stderr, "Usage: %s mode input.gif output.gif \n"
-        "mode : 0-sequential\n"
-        "       1-parallel\n"
-        "       2-test\n", argv[0]);
+                        "mode : 0-sequential\n"
+                        "       1-parallel\n"
+                        "       2-test\n",
+                argv[0]);
         return 1;
     }
 
@@ -42,12 +41,18 @@ int main(int argc, char **argv)
     input_filename = argv[2];
     output_filename = argv[3];
 
-    if(mode == MODE_TEST){
-        test();
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if (mode == MODE_TEST)
+    {
+        if (rank == 0)
+            test();
     }
     else if (mode == MODE_SEQUENTIAL)
     {
-        sequential_process(input_filename, output_filename);
+        if (rank == 0)
+            sequential_process(input_filename, output_filename);
     }
     else if (mode == MODE_PARALLEL)
     {

@@ -28,6 +28,7 @@ void testProcessAttribution()
                 .n_images = nFrame};
             attributeNumberOfProcess(workgroupList, nProcessList[j], &fakeImage);
 
+			printf("Workgroup list\n");
             for (int k = 0; k < nMaxGroup; k++)
             {
                 printf("%d ", workgroupList[k]);
@@ -39,10 +40,20 @@ void testProcessAttribution()
             {
                 printf("%d ", whichCommunicator(workgroupList, nMaxGroup, k));
             }
-            printf("\n");
+            // printf("\n");
+
+			int groupMasterNum;
+			int* groupMasterList = createGroupMasterList(workgroupList, nMaxGroup, &groupMasterNum);
+			printf("\n Group Masters : #=%d\n", groupMasterNum);
+			for (int k = 0; k < groupMasterNum; k++)
+            {
+                printf("%d ", groupMasterList[k]);
+            }
+			printf("\n");
 
             free(workgroupList);
             free(groupAttribution);
+			free(groupMasterList);
         }
     }
 }
