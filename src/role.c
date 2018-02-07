@@ -159,7 +159,7 @@ void groupMasterLoop(MPI_Comm groupComm)
                  (int)master, IMAGE_TAG, MPI_COMM_WORLD);
 
         printf("\t\tGM : Sent treated frame %d back to master successfully\n", newTask.frameNumber);
-        free(image);
+        //free(image);
     }
 }
 
