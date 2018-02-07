@@ -35,7 +35,7 @@ typedef struct animated_gif
                          DO NOT MODIFY */
 } animated_gif;
 
-/// \brief elemental task given to a workgroup
+/// \brief elementary task given to a workgroup
 typedef struct task
 {
     int id; /* -1 if no next task */

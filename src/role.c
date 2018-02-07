@@ -36,7 +36,9 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
                      groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
 
             int numberOfPixels = newTask.height * newTask.width;
+
             printf("Sending frame %d on %d", count, numberOfImages);
+
             MPI_Send((void *)(image + count), numberOfPixels, MPI_CUSTOM_PIXEL,
                      (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
             count++;
@@ -117,9 +119,9 @@ void groupMasterLoop(MPI_Comm groupComm)
         *singleFrameGif.p = image;
 
         // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
-        // apply_gray_filter(&singleFrameGif);
-        // apply_blur_filter(&singleFrameGif);
-        // apply_sobel_filter(&singleFrameGif);
+        apply_gray_filter(&singleFrameGif);
+        apply_blur_filter(&singleFrameGif, 5, 20);
+        apply_sobel_filter(&singleFrameGif);
 
         // SEND BACK TO MASTER
         MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
@@ -130,6 +132,6 @@ void groupMasterLoop(MPI_Comm groupComm)
     }
 }
 
-void slaveGroup(MPI_Comm groupComm)
+void slaveGroupLoop(MPI_Comm groupComm)
 {
 }
