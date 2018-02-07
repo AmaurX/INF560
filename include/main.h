@@ -52,6 +52,8 @@ MPI_Datatype MPI_CUSTOM_TASK;
  * 
  * This list helps positionning the process in the hierarchy 
 */
+void waitForDebug();
+
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
 int whichCommunicator(int *workgroupList, int listSize, int rankWorld);
 int *createGroupMasterList(const int *workgroupList, const int workgroupListSize, int *gmListSizeOut);
