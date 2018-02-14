@@ -27,15 +27,16 @@ int parallel_process(char *input_filename, char *output_filename)
 	double duration;
 
 	// Add a MPI_Type_struct
+
 	int blocksizes[] = {4, 4, 4, 4};
-	MPI_Aint displacements[] = {0, 0, 0, 0};
+	MPI_Aint displacements[] = {0, sizeof(int), 2 * sizeof(int), 3 * sizeof(int)};
 	MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
 	MPI_Type_create_struct(4, blocksizes, displacements,
 						   types, &MPI_CUSTOM_TASK);
 	MPI_Type_commit(&MPI_CUSTOM_TASK);
 
 	int blocksizes2[] = {4, 4, 4};
-	MPI_Aint displacements2[] = {0, 0, 0};
+	MPI_Aint displacements2[] = {0, sizeof(int), 2 * sizeof(int)};
 	MPI_Datatype types2[] = {MPI_INT, MPI_INT, MPI_INT};
 	MPI_Type_create_struct(3, blocksizes2, displacements2,
 						   types2, &MPI_CUSTOM_PIXEL);
@@ -80,6 +81,7 @@ int parallel_process(char *input_filename, char *output_filename)
 
 		int numberOfGroupMaster;
 		int *groupMasterList = createGroupMasterList(workgroupList, commWorldSize, &numberOfGroupMaster);
+		//waitForDebug();
 
 		masterLoop(groupMasterList, numberOfGroupMaster, image);
 
@@ -104,9 +106,9 @@ int parallel_process(char *input_filename, char *output_filename)
 			// do nothing.
 			// for now...
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
-			if(groupRank == 0){
-				waitForDebug();
-				
+			if (groupRank == 0)
+			{
+				//waitForDebug();
 			}
 			groupMasterLoop(groupComm);
 		}

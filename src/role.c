@@ -42,7 +42,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
             printf("M: Sending frame %d on %d\n", count, numberOfImages);
 
-            MPI_Send((void *)(image->p[count]), numberOfPixels, MPI_CUSTOM_PIXEL,
+            //  MPI_Send((void *)(image->p[count]), numberOfPixels, MPI_CUSTOM_PIXEL,
+            MPI_Send((void *)(image->p[count]), numberOfPixels * sizeof(pixel), MPI_BYTE,
                      (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
             printf("M: Sent frame %d on %d successfully\n", count, numberOfImages);
 
@@ -64,7 +65,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         int numberOfPixels = doneTask.width * doneTask.height;
         int sender = status.MPI_SOURCE;
 
-        MPI_Recv((void *)((pixel *)image->p[frameNumber]), numberOfPixels, MPI_CUSTOM_PIXEL, sender,
+        MPI_Recv((void *)((pixel *)image->p[frameNumber]), numberOfPixels * sizeof(pixel), MPI_BYTE, sender,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);
 
         printf("M : Received treated frame %d\n", frameNumber);
@@ -90,7 +91,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
             int numberOfPixels = newTask.height * newTask.width;
 
-            MPI_Send((void *)image->p[count], numberOfPixels, MPI_CUSTOM_PIXEL,
+            MPI_Send((void *)image->p[count], numberOfPixels * sizeof(pixel), MPI_BYTE,
                      sender, IMAGE_TAG, MPI_COMM_WORLD);
             count++;
         }
@@ -132,9 +133,9 @@ void groupMasterLoop(MPI_Comm groupComm)
         // TODO: le segfault est au MPI_RECV dessous
         int numberOfPixels = newTask.height * newTask.width;
         int sizeRequested = numberOfPixels * sizeof(struct pixel);
-        struct pixel *image = (struct pixel *)malloc(sizeRequested);
+        struct pixel *pixelList = (struct pixel *)malloc(sizeRequested);
 
-        MPI_Recv((void *)image, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
+        MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);
 
         printf("\t\tGM : Received frame %d successfully\n", newTask.frameNumber);
@@ -144,7 +145,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         singleFrameGif.n_images = 1;
         singleFrameGif.height = &(newTask.height);
         singleFrameGif.width = &(newTask.width);
-        singleFrameGif.p = &(image);
+        singleFrameGif.p = &(pixelList);
 
         // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
         apply_gray_filter(&singleFrameGif);
@@ -157,7 +158,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
                  (int)master, TASK_TAG, MPI_COMM_WORLD);
 
-        MPI_Send((void *)image, numberOfPixels, MPI_CUSTOM_PIXEL,
+        MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
                  (int)master, IMAGE_TAG, MPI_COMM_WORLD);
 
         printf("\t\tGM : Sent treated frame %d back to master successfully\n", newTask.frameNumber);
