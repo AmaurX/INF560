@@ -85,6 +85,7 @@ int parallel_process(char *input_filename, char *output_filename)
 
 		int numberOfGroupMaster;
 		int *groupMasterList = createGroupMasterList(workgroupList, commWorldSize, &numberOfGroupMaster);
+		//waitForDebug();
 
 		masterLoop(groupMasterList, numberOfGroupMaster, image);
 
