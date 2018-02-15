@@ -15,7 +15,7 @@ void apply_gray_filter(animated_gif *image)
     pixel **p;
 
     p = image->p;
-
+#pragma omp parallel for schedule(dynamic)
     for (i = 0; i < image->n_images; i++)
     {
         for (j = 0; j < image->width[i] * image->height[i]; j++)
@@ -200,7 +200,7 @@ void apply_sobel_filter(animated_gif *image)
         pixel *sobel;
 
         sobel = (pixel *)malloc(width * height * sizeof(pixel));
-
+        // #pragma omp parallel for schedule(dynamic) (ne marche pas...)
         for (j = 1; j < height - 1; j++)
         {
             for (k = 1; k < width - 1; k++)
@@ -244,6 +244,7 @@ void apply_sobel_filter(animated_gif *image)
             }
         }
 
+        // #pragma omp parallel for schedule(dynamic) (doit marcher)
         for (j = 1; j < height - 1; j++)
         {
             for (k = 1; k < width - 1; k++)

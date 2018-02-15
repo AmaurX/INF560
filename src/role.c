@@ -35,7 +35,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             newTask.width = image->width[count];
             newTask.height = image->height[count];
 
-            MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
+            MPI_Send((void *)&newTask, sizeof(task), MPI_BYTE,
                      groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
 
             int numberOfPixels = newTask.height * newTask.width;
@@ -56,7 +56,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         struct task doneTask;
         MPI_Status status;
 
-        MPI_Recv((void *)&doneTask, 1, MPI_CUSTOM_TASK, MPI_ANY_SOURCE,
+        MPI_Recv((void *)&doneTask, sizeof(task), MPI_BYTE, MPI_ANY_SOURCE,
                  TASK_TAG, MPI_COMM_WORLD, &status);
 
         int frameNumber = doneTask.frameNumber;
@@ -86,7 +86,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             newTask.width = image->width[count];
             newTask.height = image->height[count];
 
-            MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
+            MPI_Send((void *)&newTask, sizeof(task), MPI_BYTE,
                      sender, TASK_TAG, MPI_COMM_WORLD);
 
             int numberOfPixels = newTask.height * newTask.width;
@@ -103,7 +103,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
         endTask.id = -1;
 
-        MPI_Send((void *)&endTask, 1, MPI_CUSTOM_TASK,
+        MPI_Send((void *)&endTask, sizeof(task), MPI_BYTE,
                  groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
     }
 }
@@ -118,7 +118,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         struct task newTask;
         MPI_Status status;
 
-        MPI_Recv((void *)&newTask, 1, MPI_CUSTOM_TASK, (int)master,
+        MPI_Recv((void *)&newTask, sizeof(task), MPI_BYTE, (int)master,
                  TASK_TAG, MPI_COMM_WORLD, &status);
 
         if (newTask.id == -1)
@@ -155,7 +155,7 @@ void groupMasterLoop(MPI_Comm groupComm)
         // SEND BACK TO MASTER
         printf("\t\tGM : Sending treated frame %d back to master \n", newTask.frameNumber);
 
-        MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
+        MPI_Send((void *)&newTask, sizeof(task), MPI_BYTE,
                  (int)master, TASK_TAG, MPI_COMM_WORLD);
 
         MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
