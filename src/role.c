@@ -110,6 +110,10 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
 void groupMasterLoop(MPI_Comm groupComm)
 {
+    // if (groupRank == 0)
+    // {
+    // waitForDebug();
+    // }
     printf("\t\tGM : Entering group master loop \n");
 
     while (true)
@@ -133,9 +137,12 @@ void groupMasterLoop(MPI_Comm groupComm)
         // TODO: le segfault est au MPI_RECV dessous
         int numberOfPixels = newTask.height * newTask.width;
         int sizeRequested = numberOfPixels * sizeof(struct pixel);
+        // struct pixel *image = (struct pixel *)malloc(sizeRequested);
+        // struct pixel* image = (struct pixel*) calloc(numberOfPixels, sizeof(struct pixel));
         struct pixel *pixelList = (struct pixel *)malloc(sizeRequested);
+        MPI_Recv((void *)pixelList, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
 
-        MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
+        // MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);
 
         printf("\t\tGM : Received frame %d successfully\n", newTask.frameNumber);

@@ -27,19 +27,23 @@ int parallel_process(char *input_filename, char *output_filename)
 	double duration;
 
 	// Add a MPI_Type_struct
-
-	int blocksizes[] = {4, 4, 4, 4};
-	MPI_Aint displacements[] = {0, sizeof(int), 2 * sizeof(int), 3 * sizeof(int)};
-	MPI_Datatype types[] = {MPI_INT, MPI_INT, MPI_INT, MPI_INT};
-	MPI_Type_create_struct(4, blocksizes, displacements,
-						   types, &MPI_CUSTOM_TASK);
+	// according to documentation, a "block" is a set of successive variables 
+	// 	of the same type
+	// 4 ints are then 1 block of size 4, displacement 0
+	int ct_blockCount = 1;
+	int ct_blocksizes[] = {4};
+	MPI_Aint ct_displacements[] = {0};
+	MPI_Datatype ct_types[] = {MPI_INT};
+	MPI_Type_create_struct(ct_blockCount, ct_blocksizes, ct_displacements,
+						   ct_types, &MPI_CUSTOM_TASK);
 	MPI_Type_commit(&MPI_CUSTOM_TASK);
 
-	int blocksizes2[] = {4, 4, 4};
-	MPI_Aint displacements2[] = {0, sizeof(int), 2 * sizeof(int)};
-	MPI_Datatype types2[] = {MPI_INT, MPI_INT, MPI_INT};
-	MPI_Type_create_struct(3, blocksizes2, displacements2,
-						   types2, &MPI_CUSTOM_PIXEL);
+	int cp_blockCount = 1;
+	int cp_blocksizes[] = {3};
+	MPI_Aint cp_displacements[] = {0};
+	MPI_Datatype cp_types[] = {MPI_INT};
+	MPI_Type_create_struct(cp_blockCount, cp_blocksizes, cp_displacements,
+						   cp_types, &MPI_CUSTOM_PIXEL);
 	MPI_Type_commit(&MPI_CUSTOM_PIXEL);
 
 	/* IMPORT Timer start */
@@ -106,10 +110,6 @@ int parallel_process(char *input_filename, char *output_filename)
 			// do nothing.
 			// for now...
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
-			if (groupRank == 0)
-			{
-				//waitForDebug();
-			}
 			groupMasterLoop(groupComm);
 		}
 		else
