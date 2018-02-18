@@ -9,7 +9,7 @@
 
 #include <gif_lib.h>
 #include <mpi.h>
-
+#include <omp.h>
 #define SOBELF_DEBUG 0
 
 #define MODE_SEQUENTIAL 0
