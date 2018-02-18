@@ -10,6 +10,29 @@
 #include "tests.h"
 #include "main.h"
 
+void init_custom_datatypes()
+{
+    // Add a MPI_Type_struct
+    // according to documentation, a "block" is a set of successive variables
+    // 	of the same type
+    // 4 ints are then 1 block of size 4, displacement 0
+    int ct_blockCount = 2;
+    int ct_blocksizes[] = {5, 4};
+    MPI_Aint ct_displacements[] = {0, 0};
+    MPI_Datatype ct_types[] = {MPI_INT, MPI_DOUBLE};
+    MPI_Type_create_struct(ct_blockCount, ct_blocksizes, ct_displacements,
+                           ct_types, &MPI_CUSTOM_TASK);
+    MPI_Type_commit(&MPI_CUSTOM_TASK);
+
+    int cp_blockCount = 1;
+    int cp_blocksizes[] = {3};
+    MPI_Aint cp_displacements[] = {0};
+    MPI_Datatype cp_types[] = {MPI_INT};
+    MPI_Type_create_struct(cp_blockCount, cp_blocksizes, cp_displacements,
+                           cp_types, &MPI_CUSTOM_PIXEL);
+    MPI_Type_commit(&MPI_CUSTOM_PIXEL);
+}
+
 int parallel_process(char *input_filename, char *output_filename)
 {
 	int rankWorld, commWorldSize, groupIndex;

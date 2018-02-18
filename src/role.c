@@ -117,7 +117,7 @@ void groupMasterLoop(MPI_Comm groupComm)
 {
     int worldRank, groupSize;
     MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
-    MPI_Comm_Size(groupComm, &groupSize);
+    MPI_Comm_size(groupComm, &groupSize);
     // if (groupRank == 0)
     // {
     // waitForDebug();
@@ -128,7 +128,7 @@ void groupMasterLoop(MPI_Comm groupComm)
     {
         // RECEIVING FROM MASTER
         struct task newTask;
-        double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration;
+        double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration=0;
         MPI_Status status;
 
         MPI_Recv((void *)&newTask, 1, MPI_CUSTOM_TASK, (int)master,
@@ -183,7 +183,7 @@ void groupMasterLoop(MPI_Comm groupComm)
 
 
         // Group Master jst finished gathering all parts
-        newTask.totalTimeTaken = Mpi_Wtime() - startWorkTime;
+        newTask.totalTimeTaken = MPI_Wtime() - startWorkTime;
         newTask.totalTimeWorking = totalWorkDuration;
         newTask.workgroupSize = groupSize;
         // SEND BACK TO MASTER
