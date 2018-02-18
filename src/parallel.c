@@ -23,31 +23,14 @@ int parallel_process(char *input_filename, char *output_filename)
 	MPI_Comm groupComm;
 
 	animated_gif *image;
-	struct timeval t1, t2;
+	double timeStart, timeEnd;
+	// struct timeval t1, t2;
 	double duration;
 
-	// Add a MPI_Type_struct
-	// according to documentation, a "block" is a set of successive variables 
-	// 	of the same type
-	// 4 ints are then 1 block of size 4, displacement 0
-	int ct_blockCount = 1;
-	int ct_blocksizes[] = {4};
-	MPI_Aint ct_displacements[] = {0};
-	MPI_Datatype ct_types[] = {MPI_INT};
-	MPI_Type_create_struct(ct_blockCount, ct_blocksizes, ct_displacements,
-						   ct_types, &MPI_CUSTOM_TASK);
-	MPI_Type_commit(&MPI_CUSTOM_TASK);
-
-	int cp_blockCount = 1;
-	int cp_blocksizes[] = {3};
-	MPI_Aint cp_displacements[] = {0};
-	MPI_Datatype cp_types[] = {MPI_INT};
-	MPI_Type_create_struct(cp_blockCount, cp_blocksizes, cp_displacements,
-						   cp_types, &MPI_CUSTOM_PIXEL);
-	MPI_Type_commit(&MPI_CUSTOM_PIXEL);
+	init_custom_datatypes();
 
 	/* IMPORT Timer start */
-	gettimeofday(&t1, NULL);
+	timeStart = MPI_Wtime();
 
 	/* Load file and store the pixels in array */
 	image = load_pixels(input_filename);
@@ -57,9 +40,9 @@ int parallel_process(char *input_filename, char *output_filename)
 	}
 
 	/* IMPORT Timer stop */
-	gettimeofday(&t2, NULL);
+	timeEnd = MPI_Wtime();
 
-	duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+	duration = timeEnd - timeStart;
 
 	printf("GIF loaded from file %s with %d image(s) in %lf s\n",
 		   input_filename, image->n_images, duration);
@@ -67,7 +50,7 @@ int parallel_process(char *input_filename, char *output_filename)
 	MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rankWorld);
 
-	gettimeofday(&t1, NULL);
+	timeStart = MPI_Wtime();
 
 	// process attribution
 	/// desperately under-optimized value
@@ -93,9 +76,9 @@ int parallel_process(char *input_filename, char *output_filename)
 		{
 			return 1;
 		}
-		gettimeofday(&t2, NULL);
+		timeEnd = MPI_Wtime();
 
-		duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+		duration = timeEnd - timeStart;
 		printf("Total work completed in %lf s\n", duration);
 	}
 	else

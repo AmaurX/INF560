@@ -3,6 +3,7 @@
 #include <math.h>
 #include "main.h"
 #include "filters.h"
+#include <mpi.h>
 
 #include "role.h"
 
@@ -34,6 +35,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             newTask.frameNumber = count;
             newTask.width = image->width[count];
             newTask.height = image->height[count];
+
 
             MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
                      groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
@@ -68,6 +70,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         MPI_Recv((void *)((pixel *)image->p[frameNumber]), numberOfPixels * sizeof(pixel), MPI_BYTE, sender,
                  IMAGE_TAG, MPI_COMM_WORLD, &status);
 
+        doneTask.endTimestamp = MPI_Wtime();
         printf("M : Received treated frame %d\n", frameNumber);
 
         // doneImages[doneTask.frameNumber] = 1;
@@ -85,6 +88,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             newTask.frameNumber = count;
             newTask.width = image->width[count];
             newTask.height = image->height[count];
+            newTask.startTimestamp = MPI_Wtime();
 
             MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
                      sender, TASK_TAG, MPI_COMM_WORLD);
@@ -93,6 +97,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
             MPI_Send((void *)image->p[count], numberOfPixels * sizeof(pixel), MPI_BYTE,
                      sender, IMAGE_TAG, MPI_COMM_WORLD);
+            
             count++;
         }
     }
@@ -110,6 +115,9 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
 void groupMasterLoop(MPI_Comm groupComm)
 {
+    int worldRank, groupSize;
+    MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
+    MPI_Comm_Size(groupComm, &groupSize);
     // if (groupRank == 0)
     // {
     // waitForDebug();
@@ -120,6 +128,7 @@ void groupMasterLoop(MPI_Comm groupComm)
     {
         // RECEIVING FROM MASTER
         struct task newTask;
+        double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration;
         MPI_Status status;
 
         MPI_Recv((void *)&newTask, 1, MPI_CUSTOM_TASK, (int)master,
@@ -139,7 +148,14 @@ void groupMasterLoop(MPI_Comm groupComm)
         int sizeRequested = numberOfPixels * sizeof(struct pixel);
         // struct pixel *image = (struct pixel *)malloc(sizeRequested);
         // struct pixel* image = (struct pixel*) calloc(numberOfPixels, sizeof(struct pixel));
+        //sensitive malloc : will cherck allocation
         struct pixel *pixelList = (struct pixel *)malloc(sizeRequested);
+        if(pixelList == NULL)
+        {
+            //allocation failed
+            fprintf(stderr, "!!! FATAL : memory allocation failed on group master #w=%d ", worldRank);
+            break;
+        }
         MPI_Recv((void *)pixelList, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
 
         // MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
@@ -147,6 +163,8 @@ void groupMasterLoop(MPI_Comm groupComm)
 
         printf("\t\tGM : Received frame %d successfully\n", newTask.frameNumber);
 
+        startWorkTime = MPI_Wtime();
+        
         // END OF RECEIVING PHASE
         animated_gif singleFrameGif;
         singleFrameGif.n_images = 1;
@@ -159,6 +177,15 @@ void groupMasterLoop(MPI_Comm groupComm)
         apply_blur_filter(&singleFrameGif, 5, 20);
         apply_sobel_filter(&singleFrameGif);
 
+        // Group Master just finished on his part - just counting pure effective working time
+        endWorkTime = MPI_Wtime();
+        totalWorkDuration += (endWorkTime - startWorkTime);
+
+
+        // Group Master jst finished gathering all parts
+        newTask.totalTimeTaken = Mpi_Wtime() - startWorkTime;
+        newTask.totalTimeWorking = totalWorkDuration;
+        newTask.workgroupSize = groupSize;
         // SEND BACK TO MASTER
         printf("\t\tGM : Sending treated frame %d back to master \n", newTask.frameNumber);
 
