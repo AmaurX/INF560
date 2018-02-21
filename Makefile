@@ -66,7 +66,10 @@ test: all
 
 #parallel run
 run: all
-	mpirun sobelf 1 images/original/fire.gif images/processed/__first.try
+	mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
 
 massive:
-	salloc -N 5 -n 10 mpirun images/original/australian-flag-large.gif images/processed/__first.try
+	salloc -N 1 -n 8 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
+
+seq:
+	salloc -N 1 -n 1 mpirun sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.try

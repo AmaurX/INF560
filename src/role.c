@@ -20,7 +20,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     printf("Entering master loop \n");
     int count = 0;
     int numberOfImages = image->n_images;
-    struct task* taskHistory = (struct task*) malloc(numberOfImages * sizeof(struct task));
+    struct task *taskHistory = (struct task *)malloc(numberOfImages * sizeof(struct task));
 
     // int doneImages[numberOfImages] = {0};
     int numberOfProcessedImages = 0;
@@ -46,8 +46,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             printf("M: Sending frame %d on %d\n", count, numberOfImages);
 
             //  MPI_Send((void *)(image->p[count]), numberOfPixels, MPI_CUSTOM_PIXEL,
-            MPI_Send((void *)(image->p[count]), numberOfPixels * sizeof(pixel), MPI_BYTE,
-                     (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
+            // MPI_Send((void *)(image->p[count]), numberOfPixels * sizeof(pixel), MPI_BYTE,
+            //          (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
             printf("M: Sent frame %d on %d successfully\n", count, numberOfImages);
 
             count++;
@@ -74,7 +74,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         doneTask.endTimestamp = MPI_Wtime();
         doneTask.masterTime = doneTask.endTimestamp - doneTask.startTimestamp;
         printf("M : Received treated frame %d\n", frameNumber);
-        // store done task for analysis 
+        // store done task for analysis
         copyTask(doneTask, &taskHistory[doneTask.frameNumber]);
 
         // doneImages[doneTask.frameNumber] = 1;
@@ -99,8 +99,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
             int numberOfPixels = newTask.height * newTask.width;
 
-            MPI_Send((void *)image->p[count], numberOfPixels * sizeof(pixel), MPI_BYTE,
-                     sender, IMAGE_TAG, MPI_COMM_WORLD);
+            // MPI_Send((void *)image->p[count], numberOfPixels * sizeof(pixel), MPI_BYTE,
+            //          sender, IMAGE_TAG, MPI_COMM_WORLD);
 
             count++;
         }
@@ -120,7 +120,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     write_taskHistory("results/out.csv", taskHistory, numberOfImages);
 }
 
-void groupMasterLoop(MPI_Comm groupComm)
+void groupMasterLoop(MPI_Comm groupComm, animated_gif *image)
 {
     int worldRank, groupSize;
     MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
@@ -156,17 +156,19 @@ void groupMasterLoop(MPI_Comm groupComm)
         // struct pixel *image = (struct pixel *)malloc(sizeRequested);
         // struct pixel* image = (struct pixel*) calloc(numberOfPixels, sizeof(struct pixel));
         //sensitive malloc : will cherck allocation
-        struct pixel *pixelList = (struct pixel *)malloc(sizeRequested);
-        if (pixelList == NULL)
-        {
-            //allocation failed
-            fprintf(stderr, "!!! FATAL : memory allocation failed on group master #w=%d ", worldRank);
-            break;
-        }
-        MPI_Recv((void *)pixelList, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
+        // struct pixel *pixelList = (struct pixel *)malloc(sizeRequested);
+        // if (pixelList == NULL)
+        // {
+        //     //allocation failed
+        //     fprintf(stderr, "!!! FATAL : memory allocation failed on group master #w=%d ", worldRank);
+        //     break;
+        // }
+        //MPI_Recv((void *)pixelList, numberOfPixels, MPI_CUSTOM_PIXEL, (int)master,
 
-                 // MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
-                 IMAGE_TAG, MPI_COMM_WORLD, &status);
+        // MPI_Recv((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE, (int)master,
+        //         IMAGE_TAG, MPI_COMM_WORLD, &status);
+
+        struct pixel *pixelList = image->p[newTask.frameNumber];
 
         printf("\t\tGM : Received frame %d successfully\n", newTask.frameNumber);
 
