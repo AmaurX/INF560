@@ -115,7 +115,6 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         MPI_Send((void *)&endTask, sizeof(task), MPI_BYTE,
                  groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
     }
-    printf("Master finishing: resume \n");
     // save to file
     write_taskHistory("results/out.csv", taskHistory, numberOfImages);
 }

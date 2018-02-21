@@ -68,5 +68,5 @@ test: all
 run: all
 	mpirun sobelf 1 images/original/fire.gif images/processed/__first.try
 
-massive:
-	salloc -N 5 -n 10 mpirun images/original/australian-flag-large.gif images/processed/__first.try
+massive: all
+	salloc -N 5 -n 10 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
