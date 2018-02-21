@@ -16,6 +16,8 @@
 #define MODE_PARALLEL 1
 #define MODE_TEST 2
 
+#define PRINTTASK_MAXSIZE 200
+
 /// \brief Represent one pixel from the image
 typedef struct pixel
 {
@@ -61,6 +63,8 @@ typedef struct task
     double startTimestamp;
     /** filled by master : gives the date when master finished parsing the task and moved on to the next*/
     double endTimestamp;
+    /** difference between 2 precedent values */
+    double masterTime;
 } task;
 
 MPI_Datatype MPI_CUSTOM_PIXEL;
@@ -73,6 +77,8 @@ void init_custom_datatypes();
  * 
  * This list helps positionning the process in the hierarchy 
 */
+char * string_of_task(struct task *task, bool formatted);
+void copyTask(struct task taskIn, struct task *taskOut);
 void waitForDebug();
 
 void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
