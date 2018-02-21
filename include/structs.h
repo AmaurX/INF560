@@ -60,4 +60,5 @@ MPI_Datatype MPI_CUSTOM_TASK;
 void init_custom_datatypes();
 
 char *string_of_task(struct task *task, bool formatted);
+int write_taskHistory(char* filename, struct task * taskHistory, int nTasks);
 void copyTask(struct task taskIn, struct task *taskOut);

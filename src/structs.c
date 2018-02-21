@@ -27,13 +27,29 @@ void init_custom_datatypes()
 	MPI_Type_commit(&MPI_CUSTOM_PIXEL);
 }
 
+int write_taskHistory(char* filename, struct task * taskHistory, int nTasks)
+{
+	printf("writing taskHistory to file %s\n", filename);
+	char header[] = "id, frame, height, width, #workgroup, totalTime, workTime, masterTime, start, end";
+	FILE* outFile = fopen(filename,  "w");
+	fprintf(outFile, "%s\n", header);
+	for(int i = 0 ; i<nTasks ; i++)
+	{
+		char* line = string_of_task(&taskHistory[i], false);
+		fprintf(outFile, "%s\n", line);
+		free(line);
+	}
+	fclose(outFile);
+	return 0;
+}
+
 char *string_of_task(struct task *task, bool formatted)
 {
 	// const int max_size = 200;
 	char *resl = malloc(PRINTTASK_MAXSIZE * sizeof(char));
 	char *format_string;
-	char pure[PRINTTASK_MAXSIZE] = "%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf, %lf";
-	char pretty[PRINTTASK_MAXSIZE] = "task{\n"
+	char pure[] = "%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf";
+	char pretty[] = "task{\n"
 									 "\tid=%d\n"
 									 "\tframe=%d\n"
 									 "\tdim=%d.%d\n"
