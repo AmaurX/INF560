@@ -61,4 +61,5 @@ void init_custom_datatypes();
 
 char *string_of_task(struct task *task, bool formatted);
 int write_taskHistory(char* filename, struct task * taskHistory, int nTasks);
+int autosave_taskHistory(struct task* taskHistory, int numberOfImages);
 void copyTask(struct task taskIn, struct task *taskOut);

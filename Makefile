@@ -39,7 +39,7 @@ OBJ= $(OBJ_DIR)/dgif_lib.o \
 	$(OBJ_DIR)/parallel.o \
 	$(OBJ_DIR)/sequential.o \
 	$(OBJ_DIR)/role.o\
-	$(OBJ_DIR)/structs.o\
+	$(OBJ_DIR)/structs.o
 
 
 all: $(OBJ_DIR) sobelf

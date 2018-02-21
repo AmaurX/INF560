@@ -3,6 +3,7 @@
 #include <math.h>
 #include "main.h"
 #include "filters.h"
+#include <time.h>
 #include <mpi.h>
 
 #include "role.h"
@@ -31,7 +32,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         if (count < numberOfImages)
         {
             struct task newTask;
-
+            printf("%lf",MPI_Wtime());
+            
             newTask.id = count;
             newTask.frameNumber = count;
             newTask.width = image->width[count];
@@ -115,8 +117,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
         MPI_Send((void *)&endTask, sizeof(task), MPI_BYTE,
                  groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
     }
-    // save to file
-    write_taskHistory("results/out.csv", taskHistory, numberOfImages);
+
+    autosave_taskHistory(taskHistory, numberOfImages);
 }
 
 void groupMasterLoop(MPI_Comm groupComm)
