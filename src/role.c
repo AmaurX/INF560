@@ -15,107 +15,79 @@ enum role giveRoleInGroup(int rankGroup)
         return slave;
 }
 
-void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image)
+void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image, int *imageToTreat)
 {
     printf("Entering master loop \n");
     int count = 0;
     int numberOfImages = image->n_images;
     struct task *taskHistory = (struct task *)malloc(numberOfImages * sizeof(struct task));
 
+    MPI_Status *statusList = (MPI_Status *)malloc(numberOfImages * sizeof(MPI_Status));
+
     // int doneImages[numberOfImages] = {0};
     int numberOfProcessedImages = 0;
-    printf("M: Beginning first round of distribution \n");
 
-    for (int i = 0; i < numberOfGroupMaster; i++)
+    for (int i = 0; i < numberOfImages; i++)
     {
-        if (count < numberOfImages)
+        if (imageToTreat[i] == 0)
         {
-            struct task newTask;
+            MPI_Irecv((void *)&(taskHistory[i]), sizeof(task), MPI_BYTE, MPI_ANY_SOURCE,
+                      -(i + 1), MPI_COMM_WORLD, &(statusList[i]));
 
-            newTask.id = count;
-            newTask.frameNumber = count;
-            newTask.width = image->width[count];
-            newTask.height = image->height[count];
-            newTask.startTimestamp = MPI_Wtime();
+            int frameNumber = taskHistory[i].frameNumber;
+            printf("M : Receiving treated frame %d\n", frameNumber);
 
-            MPI_Send((void *)&newTask, 1, MPI_CUSTOM_TASK,
-                     groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
+            int numberOfPixels = taskHistory[i].width * taskHistory[i].height;
+            int sender = statusList[i].MPI_SOURCE;
 
-            int numberOfPixels = newTask.height * newTask.width;
+            MPI_Irecv((void *)((pixel *)image->p[frameNumber]), numberOfPixels * sizeof(pixel), MPI_BYTE, sender,
+                      i + 1, MPI_COMM_WORLD, &(statusList[i]));
 
-            printf("M: Sending frame %d on %d\n", count, numberOfImages);
+            taskHistory[i].endTimestamp = MPI_Wtime();
+            taskHistory[i].masterTime = taskHistory[i].endTimestamp - taskHistory[i].startTimestamp;
+            printf("M : Received treated frame %d\n", frameNumber);
+            // store done task for analysis
+            copyTask(taskHistory[i], &taskHistory[taskHistory[i].frameNumber]);
 
-            //  MPI_Send((void *)(image->p[count]), numberOfPixels, MPI_CUSTOM_PIXEL,
-            // MPI_Send((void *)(image->p[count]), numberOfPixels * sizeof(pixel), MPI_BYTE,
-            //          (int)groupMasterList[i], IMAGE_TAG, MPI_COMM_WORLD);
-            printf("M: Sent frame %d on %d successfully\n", count, numberOfImages);
-
-            count++;
+            // doneImages[taskHistory[i].frameNumber] = 1;
+            if (statusList[i].MPI_ERROR == 0)
+            {
+                numberOfProcessedImages++;
+                printf("M: Frame %d on %d was processed successfully. %d frame completed in total \n", frameNumber, numberOfImages, numberOfProcessedImages);
+            }
         }
     }
 
-    while (numberOfProcessedImages < numberOfImages)
+    for (int i = 0; i < numberOfImages; i++)
     {
-        struct task doneTask;
-        MPI_Status status;
-
-        MPI_Recv((void *)&doneTask, sizeof(task), MPI_BYTE, MPI_ANY_SOURCE,
-                 TASK_TAG, MPI_COMM_WORLD, &status);
-
-        int frameNumber = doneTask.frameNumber;
-        printf("M : Receiving treated frame %d\n", frameNumber);
-
-        int numberOfPixels = doneTask.width * doneTask.height;
-        int sender = status.MPI_SOURCE;
-
-        MPI_Recv((void *)((pixel *)image->p[frameNumber]), numberOfPixels * sizeof(pixel), MPI_BYTE, sender,
-                 IMAGE_TAG, MPI_COMM_WORLD, &status);
-
-        doneTask.endTimestamp = MPI_Wtime();
-        doneTask.masterTime = doneTask.endTimestamp - doneTask.startTimestamp;
-        printf("M : Received treated frame %d\n", frameNumber);
-        // store done task for analysis
-        copyTask(doneTask, &taskHistory[doneTask.frameNumber]);
-
-        // doneImages[doneTask.frameNumber] = 1;
-        if (status.MPI_ERROR == 0)
+        if (imageToTreat[i] == 1)
         {
-            numberOfProcessedImages++;
-            printf("M: Frame %d on %d was processed successfully. %d frame completed in total \n", frameNumber, numberOfImages, numberOfProcessedImages);
-        }
+            struct pixel *pixelList = image->p[i];
 
-        if (count < numberOfImages)
-        {
-            struct task newTask;
+            startWorkTime = MPI_Wtime();
 
-            newTask.id = count;
-            newTask.frameNumber = count;
-            newTask.width = image->width[count];
-            newTask.height = image->height[count];
-            newTask.startTimestamp = MPI_Wtime();
+            // END OF RECEIVING PHASE
+            animated_gif singleFrameGif;
+            singleFrameGif.n_images = 1;
+            singleFrameGif.height = &(image->height[i]);
+            singleFrameGif.width = &(image->width[i]);
+            singleFrameGif.p = &(pixelList);
 
-            MPI_Send((void *)&newTask, sizeof(task), MPI_BYTE,
-                     sender, TASK_TAG, MPI_COMM_WORLD);
+            // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
+            apply_gray_filter(&singleFrameGif);
+            apply_blur_filter(&singleFrameGif, 5, 20);
+            apply_sobel_filter(&singleFrameGif);
 
-            int numberOfPixels = newTask.height * newTask.width;
+            // Group Master just finished on his part - just counting pure effective working time
+            endWorkTime = MPI_Wtime();
+            totalWorkDuration += (endWorkTime - startWorkTime);
 
-            // MPI_Send((void *)image->p[count], numberOfPixels * sizeof(pixel), MPI_BYTE,
-            //          sender, IMAGE_TAG, MPI_COMM_WORLD);
-
-            count++;
+            // Group Master jst finished gathering all parts
+            taskHistory[i].totalTimeTaken = MPI_Wtime() - startWorkTime;
+            taskHistory[i].totalTimeWorking = totalWorkDuration;
+            taskHistory[i].workgroupSize = groupSize;
         }
     }
-
-    for (int i = 0; i < numberOfGroupMaster; i++)
-    {
-        struct task endTask;
-
-        endTask.id = -1;
-
-        MPI_Send((void *)&endTask, sizeof(task), MPI_BYTE,
-                 groupMasterList[i], TASK_TAG, MPI_COMM_WORLD);
-    }
-    // save to file
     write_taskHistory("results/out.csv", taskHistory, numberOfImages);
 }
 
