@@ -56,6 +56,7 @@ int parallel_process(char *input_filename, char *output_filename)
 	/// desperately under-optimized value
 	int listSize = image->n_images + 1;
 	int *workgroupList = (int *)calloc(listSize, sizeof(int));
+	int * imagesToProcess;
 	attributeNumberOfProcess(workgroupList, commWorldSize, image);
 	groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
 	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
@@ -70,7 +71,7 @@ int parallel_process(char *input_filename, char *output_filename)
 		int *groupMasterList = createGroupMasterList(workgroupList, commWorldSize, &numberOfGroupMaster);
 		//waitForDebug();
 
-		masterLoop(groupMasterList, numberOfGroupMaster, image);
+		masterLoop(groupMasterList, numberOfGroupMaster, image, imagesToProcess, groupComm);
 
 		if (!store_pixels(output_filename, image))
 		{

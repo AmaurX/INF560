@@ -3,6 +3,7 @@
 #include <math.h>
 #include "main.h"
 #include "filters.h"
+#include <time.h>
 #include <mpi.h>
 
 #include "role.h"
@@ -52,6 +53,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     {
         if (imageToTreat[i] == 1)
         {
+            double startWorkTime, endWorkTime, totalWorkDuration = 0;
             struct pixel *pixelList = image->p[i];
 
             double startWorkTime = MPI_Wtime();

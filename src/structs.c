@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 void init_custom_datatypes()
 {
@@ -79,4 +80,17 @@ char *string_of_task(struct task *task, bool formatted)
 
 void copyTask(struct task taskIn, struct task *taskOut){
 	memcpy(taskOut, &taskIn,sizeof(struct task));
+}
+
+int autosave_taskHistory(struct task* taskHistory, int numberOfImages)
+{
+	// save to file
+    char name[200], date[200];
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(date, sizeof(date)-1, "%d%m-%H:%M:%S", t);
+    snprintf(name, sizeof(name)-1, "results/out-%s.csv", date);
+    printf("%s\n", name);
+
+    return write_taskHistory(name, taskHistory, numberOfImages);
 }
