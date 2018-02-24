@@ -22,6 +22,6 @@ giveRoleInGroup(int rankGroup);
 
 void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image, int *imageToTreat, MPI_Comm groupComm);
 
-void groupMasterLoop(MPI_Comm groupComm, animated_gif *image);
+void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat);
 
 void slaveGroupLoop(MPI_Comm groupComm);
