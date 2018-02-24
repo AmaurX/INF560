@@ -113,29 +113,37 @@ int parallel_process(char *input_filename, char *output_filename)
  * 
  * returned tab is of the form [1, x, y, ..] because first index is for the MASTER group
  */
-void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image)
+int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *image, int* workgroupListSize)
 {
+	const int preferredMaxPerGroup = (int)(image->n_images / numberOfProcess);
+	const int maxGroupNumber = image->n_images;
+	int* rawWorkgroupList =(int*)malloc(maxGroupNumber * sizeof(int));
 	if (numberOfProcess < 2)
 	{
 		fprintf(stderr, "Too few processes. Aborting\n");
-		return;
+		return NULL;
 	}
-	int maxGroup = image->n_images + 1;
-	int freeProcess = numberOfProcess - 1;
-	int compteur = image->n_images;
-	int i = 1;
-	workgroupList[0] = 1;
+	int freeProcess = numberOfProcess;
+	int currGroup = 0;
 
 	while (freeProcess > 0)
 	{
-		workgroupList[i]++;
-		if (workgroupList[i] == 1 && i + 1 < maxGroup)
+		rawWorkgroupList[currGroup]++;
+		if (rawWorkgroupList[currGroup] == 1 && currGroup + 1 < maxGroupNumber)
 		{
 			//next group
-			i++;
+			currGroup++;
 		}
 		freeProcess--;
 	}
+	int totalNumOfGroup = currGroup;
+	int* workGroupList = (int*) malloc(totalNumOfGroup * sizeof(int));
+	
+	for(int i = 0 ; i < totalNumOfGroup; i++){
+		workGroupList[i] = rawWorkgroupList[i];
+	}
+	*workgroupListSize = totalNumOfGroup;
+	return workGroupList;
 
 	// while (compteur >= 4 && i < image->n_images - 1)
 	// {
@@ -193,4 +201,24 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 
 	*gmListSizeOut = groupNum;
 	return gmList;
+}
+
+/**
+ * fills 
+ */
+int getImagesToTreat(const int groupIndex, const int* workgroupList, const int workgroupListSize, const int numberOfImages, int* filledTabOut)
+{
+	//first, get number of groups
+	int i;
+	for(i = 0 ; i < workgroupListSize && workgroupList[i]==0; i++);
+	printf("got %d effective groups\n", i);
+
+	int nGroups = i;
+	int iFrame = 0;
+	while(iFrame < numberOfImages)
+	{
+		int assignedGroup = (iFrame + 1)%nGroups;
+		filledTabOut[iFrame] = (groupIndex == assignedGroup);
+	}
+	return nGroups;
 }

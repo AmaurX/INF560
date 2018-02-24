@@ -22,11 +22,10 @@ void testProcessAttribution()
             printf("================================\n"
                    "===== test with M=%d L=%d ======\n",
                    nProcessList[j], nFrame);
-            int nMaxGroup = nFrame + 1;
-            int *workgroupList = (int *)calloc(nMaxGroup, sizeof(int));
             animated_gif fakeImage = {
                 .n_images = nFrame};
-            attributeNumberOfProcess(workgroupList, nProcessList[j], &fakeImage);
+            int nMaxGroup;
+            int *workgroupList = attributeNumberOfProcess(nProcess, &fakeImage, &nMaxGroup);
 
 			printf("Workgroup list\n");
             for (int k = 0; k < nMaxGroup; k++)

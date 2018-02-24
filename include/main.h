@@ -27,7 +27,7 @@ void waitForDebug();
  * 
  * This list helps positionning the process in the hierarchy 
 */
-void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_gif *image);
+int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *image, int* workgroupListSize);
 int whichCommunicator(int *workgroupList, int listSize, int rankWorld);
 int *createGroupMasterList(const int *workgroupList, const int workgroupListSize, int *gmListSizeOut);
 
