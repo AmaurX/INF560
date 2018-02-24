@@ -10,8 +10,6 @@
 #include "tests.h"
 #include "main.h"
 
-
-
 int parallel_process(char *input_filename, char *output_filename)
 {
 	int rankWorld, commWorldSize, groupIndex;
@@ -58,6 +56,7 @@ int parallel_process(char *input_filename, char *output_filename)
 	/// desperately under-optimized value
 	int listSize = image->n_images + 1;
 	int *workgroupList = (int *)calloc(listSize, sizeof(int));
+	int * imagesToProcess;
 	attributeNumberOfProcess(workgroupList, commWorldSize, image);
 	groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
 	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
@@ -72,7 +71,7 @@ int parallel_process(char *input_filename, char *output_filename)
 		int *groupMasterList = createGroupMasterList(workgroupList, commWorldSize, &numberOfGroupMaster);
 		//waitForDebug();
 
-		masterLoop(groupMasterList, numberOfGroupMaster, image);
+		masterLoop(groupMasterList, numberOfGroupMaster, image, imagesToProcess, groupComm);
 
 		if (!store_pixels(output_filename, image))
 		{
@@ -95,7 +94,7 @@ int parallel_process(char *input_filename, char *output_filename)
 			// do nothing.
 			// for now...
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
-			groupMasterLoop(groupComm);
+			groupMasterLoop(groupComm, image);
 		}
 		else
 		{
@@ -130,7 +129,7 @@ void attributeNumberOfProcess(int *workgroupList, int numberOfProcess, animated_
 	while (freeProcess > 0)
 	{
 		workgroupList[i]++;
-		if (workgroupList[i] == 4 && i + 1 < maxGroup)
+		if (workgroupList[i] == 1 && i + 1 < maxGroup)
 		{
 			//next group
 			i++;
@@ -195,5 +194,3 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 	*gmListSizeOut = groupNum;
 	return gmList;
 }
-
-
