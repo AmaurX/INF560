@@ -24,6 +24,10 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     MPI_Comm_size(groupComm, &groupSize);
     int count = 0;
     int numberOfImages = image->n_images;
+
+    /// allows tasks and pixels-related send to have different tags
+    /// and to have a offset multiple of 100 for better reading
+    const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages/100);
     struct task *taskHistory = (struct task *)malloc(numberOfImages * sizeof(struct task));
 
     MPI_Status *statusListImage = (MPI_Status *)malloc(numberOfImages * sizeof(MPI_Status));
@@ -35,26 +39,33 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     // int doneImages[numberOfImages] = {0};
     int numberOfProcessedImages = 0;
 
+    /*
+    MASTER OPEN RECEIVE SLOTS FOR EACH FOREIGN IMAGE
+    */
     for (int i = 0; i < numberOfImages; i++)
     {
         if (imageToTreat[i] == 0)
         {
             MPI_Irecv((void *)&(taskHistory[i]), sizeof(task), MPI_BYTE, MPI_ANY_SOURCE,
-                      -(i + 1), MPI_COMM_WORLD, &(requestListTask[i]));
+                        TASK_TAG_OFFSET + i, MPI_COMM_WORLD, &(requestListTask[i]));
 
             int numberOfPixels = image->height[i] * image->width[i];
 
             MPI_Irecv((void *)((pixel *)image->p[i]), numberOfPixels * sizeof(pixel), MPI_BYTE, MPI_ANY_SOURCE,
-                      i + 1, MPI_COMM_WORLD, &(requestListImage[i]));
+                      i, MPI_COMM_WORLD, &(requestListImage[i]));
         }
     }
 
+    /*
+    MASTER TREATS ITS OWN IMAGES
+    */
     for (int i = 0; i < numberOfImages; i++)
     {
         if (imageToTreat[i] == 1)
         {
             double startWorkTime, endWorkTime, totalWorkDuration = 0;
             struct pixel *pixelList = image->p[i];
+            int height, width;
 
             startWorkTime = MPI_Wtime();
 
@@ -75,12 +86,20 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             totalWorkDuration = (endWorkTime - startWorkTime);
 
             // Group Master jst finished gathering all parts
+            taskHistory[i].id = i;
+            taskHistory[i].frameNumber = i;
+            taskHistory[i].width = *singleFrameGif.width;
+            taskHistory[i].height = *singleFrameGif.height;
             taskHistory[i].totalTimeTaken = MPI_Wtime() - startWorkTime;
             taskHistory[i].totalTimeWorking = totalWorkDuration;
+            taskHistory[i].groupIndex = 0;
             taskHistory[i].workgroupSize = groupSize;
         }
     }
 
+    /*
+    MASTER WAITS FOR ALL IMAGES AND FINALIZE
+    */
     for (int i = 0; i < numberOfImages; i++)
     {
         if (imageToTreat[i] == 0)
@@ -98,8 +117,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             }
         }
     }
-
-    write_taskHistory("results/out.csv", taskHistory, numberOfImages);
+    autosave_taskHistory(taskHistory, numberOfImages);
 }
 
 void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
@@ -114,6 +132,7 @@ void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
     printf("\t\tGM : Entering group master loop \n");
 
     int numberOfImages = image->n_images;
+    const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages/100);
     double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration = 0;
 
     for (int i = 0; i < numberOfImages; i++)
@@ -141,18 +160,22 @@ void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
             totalWorkDuration += (endWorkTime - startWorkTime);
 
             // Group Master jst finished gathering all parts
+            workTask.id = i;
             workTask.frameNumber = i;
+            workTask.height = image->height[i];
+            workTask.width = image->width[i];
             workTask.totalTimeTaken = MPI_Wtime() - startWorkTime;
             workTask.totalTimeWorking = totalWorkDuration;
+            workTask.groupIndex = -1;
             workTask.workgroupSize = groupSize;
 
             printf("\t\tGM : Sending treated frame %d back to master \n", workTask.frameNumber);
 
             MPI_Send((void *)&workTask, sizeof(task), MPI_BYTE,
-                     (int)master, -(i + 1), MPI_COMM_WORLD);
+                     (int)master, TASK_TAG_OFFSET + i, MPI_COMM_WORLD);
 
             MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
-                     (int)master, i + 1, MPI_COMM_WORLD);
+                     (int)master, i, MPI_COMM_WORLD);
 
             printf("\t\tGM : Sent treated frame %d back to master successfully\n", workTask.frameNumber);
         }

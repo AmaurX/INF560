@@ -12,7 +12,7 @@ void init_custom_datatypes()
 	// 	of the same type
 	// 4 ints are then 1 block of size 4, displacement 0
 	int ct_blockCount = 2;
-	int ct_blocksizes[] = {5, 5};
+	int ct_blocksizes[] = {6, 5};
 	MPI_Aint ct_displacements[] = {0, 0};
 	MPI_Datatype ct_types[] = {MPI_INT, MPI_DOUBLE};
 	MPI_Type_create_struct(ct_blockCount, ct_blocksizes, ct_displacements,
@@ -31,7 +31,7 @@ void init_custom_datatypes()
 int write_taskHistory(char* filename, struct task * taskHistory, int nTasks)
 {
 	printf("writing taskHistory to file %s\n", filename);
-	char header[] = "id, frame, height, width, #workgroup, totalTime, workTime, masterTime, start, end";
+	char header[] = "id, frame, height, width, groupIndex, groupSize, totalTime, workTime, masterTime, start, end";
 	FILE* outFile = fopen(filename,  "w");
 	fprintf(outFile, "%s\n", header);
 	for(int i = 0 ; i<nTasks ; i++)
@@ -49,12 +49,13 @@ char *string_of_task(struct task *task, bool formatted)
 	// const int max_size = 200;
 	char *resl = malloc(PRINTTASK_MAXSIZE * sizeof(char));
 	char *format_string;
-	char pure[] = "%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf";
+	char pure[] = "%d,%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf";
 	char pretty[] = "task{\n"
 									 "\tid=%d\n"
 									 "\tframe=%d\n"
 									 "\tdim=%d.%d\n"
-									 "\t#wkgroup=%d\n"
+									 "\tgroupIndex=%d\n"
+									 "\tgroupSize=%d\n"
 									 "\ttotalTime=%lf\n"
 									 "\tworkTime=%lf\n"
 									 "\tmasterTime=%lf\n"
@@ -72,7 +73,7 @@ char *string_of_task(struct task *task, bool formatted)
 	snprintf(resl, PRINTTASK_MAXSIZE,
 			 format_string,
 			 task->id, task->frameNumber,
-			 task->width, task->height, task->workgroupSize,
+			 task->width, task->height, task->groupIndex, task->workgroupSize,
 			 task->totalTimeTaken, task->totalTimeWorking, task->masterTime,
 			 task->startTimestamp, task->endTimestamp);
 	return resl;

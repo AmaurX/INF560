@@ -59,12 +59,12 @@ int parallel_process(char *input_filename, char *output_filename)
 	timeStart = MPI_Wtime();
 
 	// process attribution
-	/// desperately under-optimized value
 	workgroupList = attributeNumberOfProcess(commWorldSize, image, &listSize);
 	groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
-	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
 	imagesToProcess = getImagesToTreat(groupIndex, workgroupList, listSize, numFrames);
 
+	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
+	
 	if (rankWorld == 0)
 	{
 		//master is working here
@@ -122,7 +122,7 @@ int *attributeNumberOfProcess(const int numberOfProcess, const animated_gif *ima
 	const int preferredMaxPerGroup = (int)ceil((double)numberOfProcess / image->n_images);
 	const int maxGroupNumber = image->n_images;
 	int *rawWorkgroupList = (int *)calloc(maxGroupNumber, sizeof(int));
-	printf("maxPerGroup=%d\n", preferredMaxPerGroup);
+	// printf("maxPerGroup=%d\n", preferredMaxPerGroup);
 	if (numberOfProcess < 2)
 	{
 		fprintf(stderr, "Too few processes. Aborting\n");

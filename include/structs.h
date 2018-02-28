@@ -40,6 +40,8 @@ typedef struct task
 
 	//******* TASK METRICS ***************
 	// filled during the task
+	/** filled by GroupMaster : index of the group in charge */
+	int groupIndex;
 	/** filled by GroupMaster : size of the workgroup who processed the task */
 	int workgroupSize;
 	/** filled by GroupMaster : real duration of the work : groupCard*((before send to Master)- (after receive from master))*/
