@@ -19,21 +19,27 @@ void testProcessAttribution()
         {
             int nFrame = nFrameList[i];
             int nProcess = nProcessList[j];
-            printf("================================\n"
-                   "===== test with M=%d L=%d ======\n",
+            printf("==========================================\n"
+                   "===== test with #Proc=%d #Frames=%d ======\n",
                    nProcessList[j], nFrame);
             animated_gif fakeImage = {
                 .n_images = nFrame};
             int nMaxGroup;
             int *workgroupList = attributeNumberOfProcess(nProcess, &fakeImage, &nMaxGroup);
 
-			printf("Workgroup list\n");
+            /*
+            printing the workgroup list
+            */
+			printf("Workgroup list (#=%d)\n", nMaxGroup);
             for (int k = 0; k < nMaxGroup; k++)
             {
                 printf("%d ", workgroupList[k]);
             }
-            printf("\n Attribution:\n");
 
+            /*
+            Process attribution
+            */
+            printf("\n Attribution:\n");
             int *groupAttribution = (int *)calloc(nProcess, sizeof(int));
             for (int k = 0; k < nProcess; k++)
             {
@@ -41,6 +47,9 @@ void testProcessAttribution()
             }
             // printf("\n");
 
+            /*
+            Group masters
+            */
 			int groupMasterNum;
 			int* groupMasterList = createGroupMasterList(workgroupList, nMaxGroup, &groupMasterNum);
 			printf("\n Group Masters : #=%d\n", groupMasterNum);
@@ -50,9 +59,48 @@ void testProcessAttribution()
             }
 			printf("\n");
 
+
+            /*
+            Check static frames attribution
+            */
+            // printf("computing static job repartition...\n");
+            int* imagesPerGroup = calloc(nMaxGroup, sizeof(int));
+            int* treatedImages = calloc(nFrame, sizeof(int));
+
+            for(int iGMaster = 0 ; iGMaster < nMaxGroup; iGMaster++){
+                int iProc = groupMasterList[iGMaster];
+                int groupIndex = whichCommunicator(workgroupList, nMaxGroup, iProc);
+                int* imagesToTreat = getImagesToTreat(groupIndex, workgroupList, nMaxGroup, nFrame);
+                // checks
+                for(int iFrame = 0 ; iFrame < nFrame ; iFrame++)
+                {
+                    int toTreat = imagesToTreat[iFrame];
+                    treatedImages[iFrame] += toTreat;
+                    imagesPerGroup[iGMaster] += toTreat;
+                }
+                free(imagesToTreat);
+            }
+            // checks that each frame is treated exactly once
+            for(int i = 0 ; i < nFrame ; i++)
+            {
+                if(treatedImages[i] != 1)
+                {
+                    printf("WARNING : frame %d is treated %d times (expected once)\n", i, treatedImages[i]);
+                }
+            }
+            //prints job repartition
+            printf("Job repartition (num of Frames per Group)\n");
+            for(int i  = 0 ; i < nMaxGroup ; i++)
+            {
+                printf("%d ", imagesPerGroup[i]);
+            }
+            printf("\n");
+
             free(workgroupList);
             free(groupAttribution);
 			free(groupMasterList);
+            free(imagesPerGroup);
+            free(treatedImages);
         }
     }
 }

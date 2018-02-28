@@ -30,6 +30,7 @@ void waitForDebug();
 int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *image, int* workgroupListSize);
 int whichCommunicator(int *workgroupList, int listSize, int rankWorld);
 int *createGroupMasterList(const int *workgroupList, const int workgroupListSize, int *gmListSizeOut);
+int* getImagesToTreat(const int groupIndex, const int* workgroupList, const int workgroupListSize, const int numberOfImages);
 
 int parallel_process(char *input_filename, char *output_filename);
 int sequential_process(char *input_filename, char *output_filename);

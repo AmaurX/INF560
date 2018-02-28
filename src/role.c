@@ -56,7 +56,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             double startWorkTime, endWorkTime, totalWorkDuration = 0;
             struct pixel *pixelList = image->p[i];
 
-            double startWorkTime = MPI_Wtime();
+            startWorkTime = MPI_Wtime();
 
             // END OF RECEIVING PHASE
             animated_gif singleFrameGif;
@@ -71,8 +71,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
             apply_sobel_filter(&singleFrameGif);
 
             // Group Master just finished on his part - just counting pure effective working time
-            double endWorkTime = MPI_Wtime();
-            double totalWorkDuration = (endWorkTime - startWorkTime);
+            endWorkTime = MPI_Wtime();
+            totalWorkDuration = (endWorkTime - startWorkTime);
 
             // Group Master jst finished gathering all parts
             taskHistory[i].totalTimeTaken = MPI_Wtime() - startWorkTime;

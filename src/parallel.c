@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <omp.h>
 #include <mpi.h>
+#include <math.h>
 
 #include "gif_utils.h"
 #include "filters.h"
@@ -23,9 +24,14 @@ int parallel_process(char *input_filename, char *output_filename)
 	MPI_Comm groupComm;
 
 	animated_gif *image;
+	int numFrames;
 	double timeStart, timeEnd;
 	// struct timeval t1, t2;
 	double duration;
+
+	int *workgroupList;
+	int listSize;
+	int *imagesToProcess;
 
 	init_custom_datatypes();
 
@@ -36,14 +42,14 @@ int parallel_process(char *input_filename, char *output_filename)
 	image = load_pixels(input_filename);
 	if (image == NULL)
 	{
+		fprintf(stderr, "Image failed to load. Exiting\n");
 		return 1;
 	}
+	numFrames = image->n_images;
 
 	/* IMPORT Timer stop */
 	timeEnd = MPI_Wtime();
-
 	duration = timeEnd - timeStart;
-
 	printf("GIF loaded from file %s with %d image(s) in %lf s\n",
 		   input_filename, image->n_images, duration);
 
@@ -54,12 +60,10 @@ int parallel_process(char *input_filename, char *output_filename)
 
 	// process attribution
 	/// desperately under-optimized value
-	int listSize = image->n_images + 1;
-	int *workgroupList = (int *)calloc(listSize, sizeof(int));
-	int * imagesToProcess;
-	attributeNumberOfProcess(workgroupList, commWorldSize, image);
+	workgroupList = attributeNumberOfProcess(commWorldSize, image, &listSize);
 	groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
 	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
+	imagesToProcess = getImagesToTreat(groupIndex, workgroupList, listSize, numFrames);
 
 	if (rankWorld == 0)
 	{
@@ -94,7 +98,7 @@ int parallel_process(char *input_filename, char *output_filename)
 			// do nothing.
 			// for now...
 			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
-			groupMasterLoop(groupComm, image);
+			groupMasterLoop(groupComm, image, imagesToProcess);
 		}
 		else
 		{
@@ -111,13 +115,14 @@ int parallel_process(char *input_filename, char *output_filename)
 /**
  * \brief assign processes to groups
  * 
- * returned tab is of the form [1, x, y, ..] because first index is for the MASTER group
+ * 
  */
-int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *image, int* workgroupListSize)
+int *attributeNumberOfProcess(const int numberOfProcess, const animated_gif *image, int *workgroupListSize)
 {
-	const int preferredMaxPerGroup = (int)(image->n_images / numberOfProcess);
+	const int preferredMaxPerGroup = (int)ceil((double)numberOfProcess / image->n_images);
 	const int maxGroupNumber = image->n_images;
-	int* rawWorkgroupList =(int*)malloc(maxGroupNumber * sizeof(int));
+	int *rawWorkgroupList = (int *)calloc(maxGroupNumber, sizeof(int));
+	printf("maxPerGroup=%d\n", preferredMaxPerGroup);
 	if (numberOfProcess < 2)
 	{
 		fprintf(stderr, "Too few processes. Aborting\n");
@@ -126,20 +131,27 @@ int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *ima
 	int freeProcess = numberOfProcess;
 	int currGroup = 0;
 
-	while (freeProcess > 0)
+	do
 	{
 		rawWorkgroupList[currGroup]++;
-		if (rawWorkgroupList[currGroup] == 1 && currGroup + 1 < maxGroupNumber)
+		freeProcess--;
+		// if the max size of group is reached
+		if (rawWorkgroupList[currGroup] == preferredMaxPerGroup
+			// there must be room for a next group
+			&& currGroup + 1 < maxGroupNumber
+			// no need if last process to handle
+			&& freeProcess)
 		{
 			//next group
 			currGroup++;
 		}
-		freeProcess--;
-	}
-	int totalNumOfGroup = currGroup;
-	int* workGroupList = (int*) malloc(totalNumOfGroup * sizeof(int));
-	
-	for(int i = 0 ; i < totalNumOfGroup; i++){
+	} while (freeProcess > 0);
+
+	int totalNumOfGroup = currGroup + 1;
+	int *workGroupList = (int *)malloc(totalNumOfGroup * sizeof(int));
+
+	for (int i = 0; i < totalNumOfGroup; i++)
+	{
 		workGroupList[i] = rawWorkgroupList[i];
 	}
 	*workgroupListSize = totalNumOfGroup;
@@ -154,6 +166,14 @@ int* attributeNumberOfProcess(const int numberOfProcess, const animated_gif *ima
 	// workgroupList[image->n_images - 1] = compteur;
 }
 
+/**
+ * attributes a process to its group Index
+ * @param workgroupList pre-filled workgroup list
+ * @param listSize the length of this  list
+ * @param rankWorld rank of process in the MPI_COMM_WORLD
+ * 
+ * @return group Index
+ */
 int whichCommunicator(int *workgroupList, int listSize, int rankWorld)
 {
 	int comm = 0;
@@ -165,12 +185,15 @@ int whichCommunicator(int *workgroupList, int listSize, int rankWorld)
 	return comm - 1;
 }
 
+/**
+ * creates and fills the list of group master processes
+ */
 int *createGroupMasterList(const int *workgroupList, const int workgroupListSize, int *gmListSizeOut)
 {
 	int groupNum = 0;
-	int currRank = 1;
+	int currRank = 0;
 	// int *item = workgroupList + 1;
-	for (int i = 1; i < workgroupListSize; i++)
+	for (int i = 0; i < workgroupListSize; i++)
 	{
 		if (workgroupList[i] == 0)
 		{
@@ -185,9 +208,9 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 	int *gmList = (int *)malloc(groupNum * sizeof(int));
 
 	groupNum = 0;
-	currRank = 1;
+	currRank = 0;
 	// int *item = workgroupList + 1;
-	for (int i = 1; i < workgroupListSize; i++)
+	for (int i = 0; i < workgroupListSize; i++)
 	{
 		if (workgroupList[i] == 0)
 		{
@@ -204,21 +227,20 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 }
 
 /**
- * fills 
+ * creates and fills a tab of size nFrames with a boolean 
+ * Used to know whether to treat a frame or not
  */
-int getImagesToTreat(const int groupIndex, const int* workgroupList, const int workgroupListSize, const int numberOfImages, int* filledTabOut)
+int *getImagesToTreat(const int groupIndex, const int *workgroupList, const int workgroupListSize, const int numberOfImages)
 {
-	//first, get number of groups
-	int i;
-	for(i = 0 ; i < workgroupListSize && workgroupList[i]==0; i++);
-	printf("got %d effective groups\n", i);
+	int *filledTabOut = (int *)calloc(numberOfImages, sizeof(int));
 
-	int nGroups = i;
+	int nGroups = workgroupListSize;
 	int iFrame = 0;
-	while(iFrame < numberOfImages)
+	while (iFrame < numberOfImages)
 	{
-		int assignedGroup = (iFrame + 1)%nGroups;
+		int assignedGroup = (iFrame + 1) % nGroups;
 		filledTabOut[iFrame] = (groupIndex == assignedGroup);
+		iFrame++;
 	}
-	return nGroups;
+	return filledTabOut;
 }
