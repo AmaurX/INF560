@@ -64,12 +64,19 @@ doc:
 test: all
 	mpirun sobelf 2 images/original/australian-flag-large.gif images/processed/__first.try
 
-#parallel run
-run: all
-	mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
-
+#parallel runs
 massive:
 	salloc -N 1 -n 8 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
 
+run:
+	salloc -N 8 -n 8 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
+
 seq:
 	salloc -N 1 -n 1 mpirun sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.try
+
+# local runs
+gr-seq:
+	mpirun -n 1 sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.try
+
+gr-run: all
+	mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try

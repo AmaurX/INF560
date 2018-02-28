@@ -177,7 +177,7 @@ void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
             MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
                      (int)master, i, MPI_COMM_WORLD);
 
-            printf("\t\tGM : Sent treated frame %d back to master successfully\n", workTask.frameNumber);
+            // printf("\t\tGM : Sent treated  frame %d back to master successfully\n", workTask.frameNumber);
         }
     }
 }
