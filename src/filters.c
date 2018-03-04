@@ -36,6 +36,30 @@ void apply_gray_filter(animated_gif *image)
     }
 }
 
+void lined_gray_filter(struct pixel *framePixelTab, int height, int width, int lineMin, int lineMax)
+{
+    pixel *p;
+
+    p = framePixelTab;
+#if USE_OMP
+#pragma omp parallel for schedule(dynamic) default(None)
+#endif
+    for (int j = lineMin * width; j < lineMax * width; j++)
+    {
+        int moy;
+        // moy = p[i][j].r/4 + ( p[i][j].g * 3/4 ) ;
+        moy = (p[j].r + p[j].g + p[j].b) / 3;
+        if (moy < 0)
+            moy = 0;
+        if (moy > 255)
+            moy = 255;
+
+        p[j].r = moy;
+        p[j].g = moy;
+        p[j].b = moy;
+    }
+}
+
 // void apply_gray_line(animated_gif *image)
 // {
 //     int i, j, k;
@@ -257,4 +281,84 @@ void apply_sobel_filter(animated_gif *image)
 
         free(sobel);
     }
+}
+
+/**
+ * lined version of the sobelf filter
+ * the intermediate buffer is smaller (only the treated part size is allocated)
+ **/
+void lined_sobelf(struct pixel *framePixelTab, int height, int width, int lineMin, int lineMax)
+{
+    int j, k;
+
+    pixel *p;
+
+    p = framePixelTab;
+
+    pixel *sobel;
+
+    sobel = (pixel *)malloc(width * (lineMin - lineMax) * sizeof(pixel));
+
+    // 1-pixel border is not treated
+    lineMin = (lineMin < 1 ? 1 : lineMin);                   //max(1, lineMin)
+    lineMax = (lineMax > height - 1 ? height - 1 : lineMax); //min(height-1, lineMax)
+    // #pragma omp parallel for schedule(dynamic) (ne marche pas...)
+    for (j = lineMin; j < lineMax; j++)
+    {
+        for (k = 1; k < width - 1; k++)
+        {
+            int pixel_blue_no, pixel_blue_n, pixel_blue_ne;
+            int pixel_blue_so, pixel_blue_s, pixel_blue_se;
+            int pixel_blue_o, /*pixel_blue,*/ pixel_blue_e;
+
+            float deltaX_blue;
+            float deltaY_blue;
+            float val_blue;
+
+            pixel_blue_n = p[CONV(j - 1, k, width)].b;
+            pixel_blue_ne = p[CONV(j - 1, k + 1, width)].b;
+            pixel_blue_no = p[CONV(j - 1, k - 1, width)].b;
+            pixel_blue_so = p[CONV(j + 1, k - 1, width)].b;
+            pixel_blue_s = p[CONV(j + 1, k, width)].b;
+            pixel_blue_se = p[CONV(j + 1, k + 1, width)].b;
+            pixel_blue_o = p[CONV(j, k - 1, width)].b;
+            // pixel_blue = p[CONV(j, k, width)].b;
+            pixel_blue_e = p[CONV(j, k + 1, width)].b;
+
+            deltaX_blue = -pixel_blue_no + pixel_blue_ne - 2 * pixel_blue_o + 2 * pixel_blue_e - pixel_blue_so + pixel_blue_se;
+
+            deltaY_blue = pixel_blue_se + 2 * pixel_blue_s + pixel_blue_so - pixel_blue_ne - 2 * pixel_blue_n - pixel_blue_no;
+
+            val_blue = sqrt(deltaX_blue * deltaX_blue + deltaY_blue * deltaY_blue) / 4;
+
+            int coord = CONV(j - lineMin, k, width);
+            if (val_blue > 50)
+            {
+                sobel[coord].r = 255;
+                sobel[coord].g = 255;
+                sobel[coord].b = 255;
+            }
+            else
+            {
+                sobel[coord].r = 0;
+                sobel[coord].g = 0;
+                sobel[coord].b = 0;
+            }
+        }
+    }
+
+    // #pragma omp parallel for schedule(dynamic) (doit marcher)
+    for (j = lineMin; j < lineMax; j++)
+    {
+        for (k = 1; k < width - 1; k++)
+        {
+            int localCoord = CONV(j - lineMin, k, width);
+            int totalCoord = CONV(j, k, width);
+            p[totalCoord].r = sobel[localCoord].r;
+            p[totalCoord].g = sobel[localCoord].g;
+            p[totalCoord].b = sobel[localCoord].b;
+        }
+    }
+
+    free(sobel);
 }

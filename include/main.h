@@ -12,7 +12,8 @@
 
 #include "structs.h"
 #define SOBELF_DEBUG 0
-#define DEBUG_PRINTS
+#define DEBUG_PRINTS 1
+#define USE_OMP 0
 
 #define MODE_SEQUENTIAL 0
 #define MODE_PARALLEL 1

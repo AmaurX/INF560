@@ -79,7 +79,7 @@ void waitForDebug()
 
 int dbprintf(char *format_string, ...)
 {
-#ifdef DEBUG_PRINTS
+#if DEBUG_PRINTS
     va_list args;
     va_start(args, format_string);
     int a = vprintf(format_string, args);
