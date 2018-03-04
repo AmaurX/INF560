@@ -24,4 +24,4 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
 void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat);
 
-void slaveGroupLoop(MPI_Comm groupComm);
+void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProcess);

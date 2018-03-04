@@ -105,7 +105,7 @@ int parallel_process(char *input_filename, char *output_filename)
 			// slave loop
 			// do nothing - but another way
 			printf("Hello from slave of group %d: (%d/%d), in world: %d/%d\n", groupIndex, groupRank, groupSize, rankWorld, commWorldSize);
-			slaveGroupLoop(groupComm);
+			slaveGroupLoop(groupComm, image, imagesToProcess);
 		}
 	}
 
