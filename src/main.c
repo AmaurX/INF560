@@ -12,6 +12,9 @@
 #include <gif_lib.h>
 #include <omp.h>
 #include <mpi.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "gif_utils.h"
 #include "filters.h"
@@ -72,4 +75,17 @@ void waitForDebug()
     fflush(stdout);
     while (0 == i)
         sleep(5);
+}
+
+int dbprintf(char *format_string, ...)
+{
+#ifdef DEBUG_PRINTS
+    va_list args;
+    va_start(args, format_string);
+    int a = vprintf(format_string, args);
+    va_end(args);
+    return a;
+#else
+    return 0;
+#endif
 }

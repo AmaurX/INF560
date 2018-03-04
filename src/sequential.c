@@ -7,6 +7,10 @@
 
 #include "main.h"
 
+#define SEQ_GRAY 1
+#define SEQ_BLUR 0
+#define SEQ_SOBEL 1
+
 int sequential_process(char *input_filename, char *output_filename)
 {
 	animated_gif *image;
@@ -31,6 +35,7 @@ int sequential_process(char *input_filename, char *output_filename)
 	printf("GIF loaded from file %s with %d image(s) in %lf s\n",
 		   input_filename, image->n_images, duration);
 
+#if SEQ_GRAY
 	/* FILTER Timer start */
 	gettimeofday(&t1, NULL);
 
@@ -43,7 +48,9 @@ int sequential_process(char *input_filename, char *output_filename)
 	duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
 
 	printf("GRAY_FILTER done in %lf s\n", duration);
+#endif
 
+#if SEQ_BLUR
 	/* FILTER Timer start */
 	gettimeofday(&t1, NULL);
 
@@ -56,6 +63,9 @@ int sequential_process(char *input_filename, char *output_filename)
 	duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
 
 	printf("BLUR_FILTER done in %lf s\n", duration);
+#endif
+
+#if SEQ_SOBEL
 
 	/* FILTER Timer start */
 	gettimeofday(&t1, NULL);
@@ -69,6 +79,7 @@ int sequential_process(char *input_filename, char *output_filename)
 	duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
 
 	printf("SOBEL_FILTER done in %lf s\n", duration);
+#endif
 
 	/* EXPORT Timer start */
 	gettimeofday(&t1, NULL);

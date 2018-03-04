@@ -79,4 +79,4 @@ gr-seq:
 	mpirun -n 1 sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.try
 
 gr-run: all
-	mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
+	mpirun -n 4 sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.try
