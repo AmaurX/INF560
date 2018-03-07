@@ -25,3 +25,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat);
 
 void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProcess);
+
+void createCountsDisplacements(int frameHeight, int frameWidth, int pixelSize, int groupSize, int **countsTabOut, int **displacementsTabOut);
+
+void getLineWindow(int frameHeight, int groupSize, int groupRank, int *lineMinOut, int *lineMaxOut);

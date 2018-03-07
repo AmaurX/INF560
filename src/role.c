@@ -135,50 +135,78 @@ void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
     const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages / 100);
     double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration = 0;
 
-    for (int i = 0; i < numberOfImages; i++)
+    for (int iFrame = 0; iFrame < numberOfImages; iFrame++)
     {
-        if (imageToTreat[i] == 1)
+        if (imageToTreat[iFrame] != 1)
         {
-            struct pixel *pixelList = image->p[i];
-
-            startWorkTime = MPI_Wtime();
-            struct task workTask;
-            // END OF RECEIVING PHASE
-            animated_gif singleFrameGif;
-            singleFrameGif.n_images = 1;
-            singleFrameGif.height = &(image->height[i]);
-            singleFrameGif.width = &(image->width[i]);
-            singleFrameGif.p = &(pixelList);
-            int numberOfPixels = singleFrameGif.height[0] * singleFrameGif.width[0];
-            // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
-            apply_gray_filter(&singleFrameGif);
-            apply_blur_filter(&singleFrameGif, 5, 20);
-            apply_sobel_filter(&singleFrameGif);
-
-            // Group Master just finished on his part - just counting pure effective working time
-            endWorkTime = MPI_Wtime();
-            totalWorkDuration += (endWorkTime - startWorkTime);
-
-            // Group Master jst finished gathering all parts
-            workTask.id = i;
-            workTask.frameNumber = i;
-            workTask.height = image->height[i];
-            workTask.width = image->width[i];
-            workTask.totalTimeTaken = MPI_Wtime() - startWorkTime;
-            workTask.totalTimeWorking = totalWorkDuration;
-            workTask.groupIndex = -1;
-            workTask.workgroupSize = groupSize;
-
-            printf("\t\tGM : Sending treated frame %d back to master \n", workTask.frameNumber);
-
-            MPI_Send((void *)&workTask, sizeof(task), MPI_BYTE,
-                     (int)master, TASK_TAG_OFFSET + i, MPI_COMM_WORLD);
-
-            MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
-                     (int)master, i, MPI_COMM_WORLD);
-
-            // printf("\t\tGM : Sent treated  frame %d back to master successfully\n", workTask.frameNumber);
+            //don't process image, go to next
+            continue;
         }
+        //frame should be processed. Getting context infos
+        int frameHeight = image->height[iFrame];
+        int frameWidth = image->width[iFrame];
+        // struct pixel *pixelTab = image->p[iFrame];
+
+        struct pixel *pixelList = image->p[iFrame];
+
+        // finding region
+        int lineMin, lineMax;
+        getLineWindow(frameHeight, 0, groupSize, &lineMin, &lineMax);
+        int *recvCountsTab, *displacementsTab;
+        createCountsDisplacements(frameHeight, frameWidth, sizeof(pixel), groupSize, &recvCountsTab, &displacementsTab);
+
+        startWorkTime = MPI_Wtime();
+        struct task workTask;
+        // END OF RECEIVING PHASE
+        animated_gif singleFrameGif;
+        singleFrameGif.n_images = 1;
+        singleFrameGif.height = &frameHeight;
+        singleFrameGif.width = &frameWidth;
+        singleFrameGif.p = &(pixelList);
+        int numberOfPixels = singleFrameGif.height[0] * singleFrameGif.width[0];
+        // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
+
+#if USE_SLAVES
+        // partial filter 1 on a region of pixelTab
+
+        // in-place collection of computed data
+        MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
+
+        // partial filter 2
+        MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
+
+        // partial filter 3
+
+        //pixel tab is a tab of pixel, therefore the addition is pixel* + int
+        MPI_Gatherv(pixelTab + lineMin * frameWidth, recvCountsTab[groupRank], MPI_BYTE, NULL, NULL, NULL, MPI_BYTE, 0, groupComm);
+#else
+        apply_gray_filter(&singleFrameGif);
+        apply_blur_filter(&singleFrameGif, 5, 20);
+        apply_sobel_filter(&singleFrameGif);
+#endif
+        // Group Master just finished on his part - just counting pure effective working time
+        endWorkTime = MPI_Wtime();
+        totalWorkDuration += (endWorkTime - startWorkTime);
+
+        // Group Master jst finished gathering all parts
+        workTask.id = iFrame;
+        workTask.frameNumber = iFrame;
+        workTask.height = image->height[iFrame];
+        workTask.width = image->width[iFrame];
+        workTask.totalTimeTaken = MPI_Wtime() - startWorkTime;
+        workTask.totalTimeWorking = totalWorkDuration;
+        workTask.groupIndex = -1;
+        workTask.workgroupSize = groupSize;
+
+        printf("\t\tGM : Sending treated frame %d back to master \n", workTask.frameNumber);
+
+        MPI_Send((void *)&workTask, sizeof(task), MPI_BYTE,
+                 (int)master, TASK_TAG_OFFSET + iFrame, MPI_COMM_WORLD);
+
+        MPI_Send((void *)pixelList, numberOfPixels * sizeof(pixel), MPI_BYTE,
+                 (int)master, iFrame, MPI_COMM_WORLD);
+
+        // printf("\t\tGM : Sent treated  frame %d back to master successfully\n", workTask.frameNumber);
     }
 }
 
@@ -204,6 +232,28 @@ void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat)
  * 7/ gather by groupmaster
  * 
  **/
+void getLineWindow(int frameHeight, int groupSize, int groupRank, int *lineMinOut, int *lineMaxOut)
+{
+    // first (remainderLen) processes get one line more
+    // thus all lines are covered
+    int baseLen = frameHeight / groupSize;
+    int remainderLen = frameHeight % groupSize;
+    //line Max is NOT included
+    int lineMin, lineMax;
+    if (groupRank < remainderLen)
+    {
+        lineMin = groupRank * (baseLen + 1);
+        lineMax = (groupRank + 1) * (baseLen + 1);
+    }
+    else
+    {
+        lineMin = groupSize * baseLen + remainderLen;
+        lineMax = (groupSize + 1) * baseLen + remainderLen;
+    }
+    *lineMinOut = lineMin;
+    *lineMaxOut = lineMax;
+}
+
 void createCountsDisplacements(int frameHeight, int frameWidth, int pixelSize, int groupSize, int **countsTabOut, int **displacementsTabOut)
 {
     int baseLen = frameHeight / groupSize;
@@ -246,22 +296,8 @@ void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProces
         pixel *pixelTab = image->p[iFrame];
 
         // finding region
-        // first (remainderLen) processes get one line more
-        // thus all lines are covered
-        int baseLen = frameHeight / groupSize;
-        int remainderLen = frameHeight % groupSize;
-        //line Max is NOT included
         int lineMin, lineMax;
-        if (groupRank < remainderLen)
-        {
-            lineMin = groupRank * (baseLen + 1);
-            lineMax = (groupRank + 1) * (baseLen + 1);
-        }
-        else
-        {
-            lineMin = groupSize * baseLen + remainderLen;
-            lineMax = (groupSize + 1) * baseLen + remainderLen;
-        }
+        getLineWindow(frameHeight, groupRank, groupSize, &lineMin, &lineMax);
         int *recvCountsTab, *displacementsTab;
         createCountsDisplacements(frameHeight, frameWidth, sizeof(pixel), groupSize, &recvCountsTab, &displacementsTab);
 
@@ -279,6 +315,5 @@ void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProces
 
         //pixel tab is a tab of pixel, therefore the addition is pixel* + int
         MPI_Gatherv(pixelTab + lineMin * frameWidth, recvCountsTab[groupRank], MPI_BYTE, NULL, NULL, NULL, MPI_BYTE, 0, groupComm);
-
     }
 }
