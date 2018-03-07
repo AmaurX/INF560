@@ -50,7 +50,7 @@ int parallel_process(char *input_filename, char *output_filename)
 	/* IMPORT Timer stop */
 	timeEnd = MPI_Wtime();
 	duration = timeEnd - timeStart;
-	printf("GIF loaded from file %s with %d image(s) in %lf s\n",
+	dbprintf("GIF loaded from file %s with %d image(s) in %lf s\n",
 		   input_filename, image->n_images, duration);
 
 	MPI_Comm_size(MPI_COMM_WORLD, &commWorldSize);
@@ -58,6 +58,7 @@ int parallel_process(char *input_filename, char *output_filename)
 
 	timeStart = MPI_Wtime();
 
+	// waitForDebug();
 	// process attribution
 	workgroupList = attributeNumberOfProcess(commWorldSize, image, &listSize);
 	groupIndex = whichCommunicator(workgroupList, listSize, rankWorld);
@@ -65,10 +66,11 @@ int parallel_process(char *input_filename, char *output_filename)
 
 	MPI_Comm_split(MPI_COMM_WORLD, groupIndex, rankWorld, &groupComm);
 	
+	
 	if (rankWorld == 0)
 	{
 		//master is working here
-		printf("Hello from thread master %d/%d\n", rankWorld, commWorldSize);
+		dbprintf("Hello from thread master %d/%d\n", rankWorld, commWorldSize);
 		// testProcessAttribution();
 
 		int numberOfGroupMaster;
@@ -97,14 +99,14 @@ int parallel_process(char *input_filename, char *output_filename)
 			// groupMaster loop
 			// do nothing.
 			// for now...
-			printf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
-			groupMasterLoop(groupComm, image, imagesToProcess);
+			dbprintf("Hello from groupMaster (group : %d/%d, world: %d/%d)\n", groupRank, groupSize, rankWorld, commWorldSize);
+			groupMasterLoop(groupComm, groupIndex, image, imagesToProcess);
 		}
 		else
 		{
 			// slave loop
 			// do nothing - but another way
-			printf("Hello from slave of group %d: (%d/%d), in world: %d/%d\n", groupIndex, groupRank, groupSize, rankWorld, commWorldSize);
+			dbprintf("Hello from slave of group %d: (%d/%d), in world: %d/%d\n", groupIndex, groupRank, groupSize, rankWorld, commWorldSize);
 			slaveGroupLoop(groupComm, image, imagesToProcess);
 		}
 	}
@@ -122,12 +124,12 @@ int *attributeNumberOfProcess(const int numberOfProcess, const animated_gif *ima
 	const int preferredMaxPerGroup = (int)ceil((double)numberOfProcess / image->n_images);
 	const int maxGroupNumber = image->n_images;
 	int *rawWorkgroupList = (int *)calloc(maxGroupNumber, sizeof(int));
-	// printf("maxPerGroup=%d\n", preferredMaxPerGroup);
-	if (numberOfProcess < 2)
-	{
-		fprintf(stderr, "Too few processes. Aborting\n");
-		return NULL;
-	}
+	// dbprintf("maxPerGroup=%d\n", preferredMaxPerGroup);
+	// if (numberOfProcess < 2)
+	// {
+	// 	fprintf(stderr, "Too few processes. Aborting\n");
+	// 	return NULL;
+	// }
 	int freeProcess = numberOfProcess;
 	int currGroup = 0;
 
@@ -199,11 +201,11 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 		{
 			break;
 		}
-		// printf("rank %d ", currRank);
+		// dbprintf("rank %d ", currRank);
 		currRank += workgroupList[i];
 		groupNum++;
 	}
-	// printf("\nSaw %d different groups\n", groupNum);
+	// dbprintf("\nSaw %d different groups\n", groupNum);
 
 	int *gmList = (int *)malloc(groupNum * sizeof(int));
 
@@ -216,7 +218,7 @@ int *createGroupMasterList(const int *workgroupList, const int workgroupListSize
 		{
 			break;
 		}
-		// printf("rank %d ", currRank);
+		// dbprintf("rank %d ", currRank);
 		gmList[groupNum] = currRank;
 		currRank += workgroupList[i];
 		groupNum++;

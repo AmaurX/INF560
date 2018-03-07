@@ -8,8 +8,9 @@
 #include "main.h"
 
 #define SEQ_GRAY 1
-#define SEQ_BLUR 0
+#define SEQ_BLUR 1
 #define SEQ_SOBEL 1
+#define SEQ_EXPORT 1
 
 int sequential_process(char *input_filename, char *output_filename)
 {
@@ -81,6 +82,8 @@ int sequential_process(char *input_filename, char *output_filename)
 	printf("SOBEL_FILTER done in %lf s\n", duration);
 #endif
 
+#if SEQ_EXPORT
+
 	/* EXPORT Timer start */
 	gettimeofday(&t1, NULL);
 
@@ -96,6 +99,8 @@ int sequential_process(char *input_filename, char *output_filename)
 	duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
 
 	printf("Export done in %lf s in file %s\n", duration, output_filename);
+
+#endif
 
 	return 0;
 }

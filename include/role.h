@@ -22,10 +22,12 @@ giveRoleInGroup(int rankGroup);
 
 void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *image, int *imageToTreat, MPI_Comm groupComm);
 
-void groupMasterLoop(MPI_Comm groupComm, animated_gif *image, int *imageToTreat);
+void groupMasterLoop(MPI_Comm groupComm, int groupIndex, animated_gif *image, int *imageToTreat);
 
 void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProcess);
 
 void createCountsDisplacements(int frameHeight, int frameWidth, int pixelSize, int groupSize, int **countsTabOut, int **displacementsTabOut);
 
 void getLineWindow(int frameHeight, int groupSize, int groupRank, int *lineMinOut, int *lineMaxOut);
+
+int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int groupIndex, struct task *taskOut, struct pixel** pixelTabOut);
