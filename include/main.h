@@ -12,10 +12,10 @@
 
 #include "structs.h"
 #define SOBELF_DEBUG 0
-#define DEBUG_PRINTS 0
-#define USE_METRICS 0
+#define DEBUG_PRINTS 01
+#define USE_METRICS 01
 
-#define USE_OMP 0
+#define USE_OMP (defined(_OPENMP) && 0)
 #define USE_SLAVES 01
 
 #define DISTRIBUTED_BLUR_FILTER 0

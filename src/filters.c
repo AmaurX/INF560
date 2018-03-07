@@ -15,7 +15,7 @@ void apply_gray_filter(animated_gif *image)
     pixel **p;
 
     p = image->p;
-#ifdef _OPENMP
+#if USE_OMP
 #pragma omp parallel for schedule(dynamic)
 #endif
     for (i = 0; i < image->n_images; i++)
@@ -43,7 +43,7 @@ void lined_gray_filter(struct pixel *framePixelTab, int height, int width, int l
     pixel *p;
 
     p = framePixelTab;
-#ifdef _OPENMP
+#if USE_OMP
 #pragma omp parallel for schedule(dynamic) default(None)
 #endif
     for (int j = lineMin * width; j < lineMax * width; j++)
