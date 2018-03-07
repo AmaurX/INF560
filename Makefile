@@ -94,4 +94,5 @@ gr-run: all
 	mpirun -n 4 sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
 
 gr-ezrun: all
-	mpirun -n 8 eztrace -t mpi ./sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	mkdir -p traces/
+	mpirun -n 8 eztrace -t mpi -o traces ./sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
