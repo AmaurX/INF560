@@ -74,22 +74,23 @@ clean:
 doc:
 	doxygen doxy/Doxyfile.conf
 
+IMAGE = totoro.gif
+# IMAGE = porsche.gif
+
 test: all
-	mpirun sobelf 2 images/original/australian-flag-large.gif images/processed/__first.gif
+	mpirun sobelf 2 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 #parallel runs
 massive:
-	salloc -N 1 -n 8 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	salloc -N 1 -n 8 mpirun sobelf 1 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 run:
-	salloc -N 8 -n 8 mpirun sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	salloc -N 8 -n 8 mpirun sobelf 1 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 seq:
-	salloc -N 1 -n 1 mpirun sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	salloc -N 1 -n 1 mpirun sobelf 0 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 # local runs
-IMAGE = totoro.gif
-# IMAGE = porsche.gif
 gr-seq:
 	mpirun -n 1 sobelf 0 images/original/$(IMAGE) images/processed/$(IMAGE)
 
