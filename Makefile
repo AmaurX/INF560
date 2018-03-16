@@ -4,7 +4,7 @@ OBJ_DIR=obj
 
 CC=mpicc
 OMP_FLAG = -fopenmp
-CFLAGS=-I$(HEADER_DIR) -std=gnu99 -g -Wall
+CFLAGS=-I$(HEADER_DIR) -std=gnu99 -g -Wall $(OMP_FLAG)
 
 LDFLAGS=-lm
 
@@ -59,6 +59,7 @@ $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 
 #main_h is a prerequisite as it contains preproc macros
+# Compilation should therefore be re-done when it changes
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c $(MAIN_H)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -87,12 +88,18 @@ seq:
 	salloc -N 1 -n 1 mpirun sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.gif
 
 # local runs
+IMAGE = totoro.gif
+# IMAGE = porsche.gif
 gr-seq:
-	mpirun -n 1 sobelf 0 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	mpirun -n 1 sobelf 0 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 gr-run: all
-	mpirun -n 4 sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	mpirun -n 8 sobelf 1 images/original/$(IMAGE) images/processed/$(IMAGE)
 
 gr-ezrun: all
-	mkdir -p traces/
-	mpirun -n 8 eztrace -t mpi -o traces ./sobelf 1 images/original/TimelyHugeGnu.gif images/processed/__first.gif
+	mkdir -p traces/ &&\
+	rm -f traces/* &&\
+	ls traces &&\
+	mpirun -n 8 eztrace -t mpi -o traces ./sobelf 1 images/original/$(IMAGE) \images/processed/$(IMAGE).gif &&\
+	eztrace_convert -o traces/out traces/*log* &&\
+	vite traces/out.trace

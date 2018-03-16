@@ -47,6 +47,9 @@ int main(int argc, char **argv)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+    struct timeval t1, t2;
+    double duration;
+    gettimeofday(&t1, NULL);
     if (mode == MODE_TEST)
     {
         if (rank == 0)
@@ -55,11 +58,26 @@ int main(int argc, char **argv)
     else if (mode == MODE_SEQUENTIAL)
     {
         if (rank == 0)
+        {
             sequential_process(input_filename, output_filename);
+        }
     }
     else if (mode == MODE_PARALLEL)
     {
+        if (rank == 0)
+        {
+            printf("// of %s\n"
+                   "OMP:%d\n"
+                   "CUDA:%d\n",
+                   input_filename, USE_OMP, USE_CUDA);
+        }
         parallel_process(input_filename, output_filename);
+    }
+    if (rank == 0)
+    {
+        gettimeofday(&t2, NULL);
+        duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+        printf("Task done in %lf s\n", duration);
     }
 
     MPI_Finalize();

@@ -28,8 +28,8 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
 
     /// allows tasks and pixels-related send to have different tags
     /// and to have a offset multiple of 100 for better reading
-    const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages / 100);
 #if USE_METRICS
+    const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages / 100);
     struct task *taskHistory = (struct task *)malloc(numberOfImages * sizeof(struct task));
     MPI_Status *statusListTask = (MPI_Status *)malloc(numberOfImages * sizeof(MPI_Status));
     MPI_Request *requestListTask = (MPI_Request *)malloc(numberOfImages * sizeof(MPI_Request));
@@ -152,7 +152,9 @@ void groupMasterLoop(MPI_Comm groupComm, int groupIndex, animated_gif *image, in
     dbprintf("\t\tGM : Entering group master loop \n");
 
     int numberOfImages = image->n_images;
+#if USE_METRICS
     const int TASK_TAG_OFFSET = 100 * (1 + numberOfImages / 100);
+#endif
 
     for (int iFrame = 0; iFrame < numberOfImages; iFrame++)
     {

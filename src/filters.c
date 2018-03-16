@@ -43,10 +43,14 @@ void lined_gray_filter(struct pixel *framePixelTab, int height, int width, int l
     pixel *p;
 
     p = framePixelTab;
+    int jMin = lineMin * width;
+    int jMax = lineMax * width;
 #if USE_OMP
-#pragma omp parallel for schedule(dynamic) default(None)
+#pragma omp parallel for schedule(dynamic) default(none) \
+firstprivate(jMin, jMax) \
+shared(p)
 #endif
-    for (int j = lineMin * width; j < lineMax * width; j++)
+    for (int j = jMin; j < jMax; j++)
     {
         int moy;
         // moy = p[i][j].r/4 + ( p[i][j].g * 3/4 ) ;
@@ -83,7 +87,7 @@ void lined_gray_filter(struct pixel *framePixelTab, int height, int width, int l
 //     }
 // }
 
-void central_blur_filter(struct pixel *framePixelTab, int height, int width,  int size, int threshold)
+void central_blur_filter(struct pixel *framePixelTab, int height, int width, int size, int threshold)
 {
     int j, k;
     int end = 0;
@@ -107,7 +111,14 @@ void central_blur_filter(struct pixel *framePixelTab, int height, int width,  in
         end = 1;
         n_iter++;
 
-        /* Apply blur on top part of image (10%) */
+/* Apply blur on top part of image (10%) */
+
+#if USE_OMP
+#pragma omp parallel for schedule(guided) default(none)\
+private(j, k)\
+firstprivate(size, height, width)\
+shared(p, new)
+#endif
         for (j = size; j < height / 10 - size; j++)
         {
             for (k = size; k < width - size; k++)
@@ -134,39 +145,62 @@ void central_blur_filter(struct pixel *framePixelTab, int height, int width,  in
         }
 
         /* Copy the middle part of the image */
-        for (j = height / 10 - size; j < height * 0.9 + size; j++)
         {
-            for (k = size; k < width - size; k++)
+
+            int jMin = height / 10 - size;
+            int jMax = height * 0.9 + size;
+#if USE_OMP
+#pragma omp parallel for schedule(guided) default(none) \
+firstprivate(jMin, jMax, size, width) \
+private(j, k) \
+shared(p, new)
+#endif
+            for (j = jMin; j < jMax; j++)
             {
-                new[CONV(j, k, width)].r = p[CONV(j, k, width)].r;
-                new[CONV(j, k, width)].g = p[CONV(j, k, width)].g;
-                new[CONV(j, k, width)].b = p[CONV(j, k, width)].b;
+                for (k = size; k < width - size; k++)
+                {
+                    new[CONV(j, k, width)].r = p[CONV(j, k, width)].r;
+                    new[CONV(j, k, width)].g = p[CONV(j, k, width)].g;
+                    new[CONV(j, k, width)].b = p[CONV(j, k, width)].b;
+                }
             }
         }
 
         /* Apply blur on the bottom part of the image (10%) */
-        for (j = height * 0.9 + size; j < height - size; j++)
         {
-            for (k = size; k < width - size; k++)
+
+            int jMin = height * 0.9 + size;
+            int jMax = height - size;
+
+#if USE_OMP
+#pragma omp parallel for schedule(guided) default(none) \
+firstprivate(jMin, jMax, width, size) \
+private(j, k) \
+shared(p, new)
+#endif
+            for (j = jMin; j < jMax; j++)
             {
-                int stencil_j, stencil_k;
-                int t_r = 0;
-                int t_g = 0;
-                int t_b = 0;
-
-                for (stencil_j = -size; stencil_j <= size; stencil_j++)
+                for (k = size; k < width - size; k++)
                 {
-                    for (stencil_k = -size; stencil_k <= size; stencil_k++)
-                    {
-                        t_r += p[CONV(j + stencil_j, k + stencil_k, width)].r;
-                        t_g += p[CONV(j + stencil_j, k + stencil_k, width)].g;
-                        t_b += p[CONV(j + stencil_j, k + stencil_k, width)].b;
-                    }
-                }
+                    int stencil_j, stencil_k;
+                    int t_r = 0;
+                    int t_g = 0;
+                    int t_b = 0;
 
-                new[CONV(j, k, width)].r = t_r / ((2 * size + 1) * (2 * size + 1));
-                new[CONV(j, k, width)].g = t_g / ((2 * size + 1) * (2 * size + 1));
-                new[CONV(j, k, width)].b = t_b / ((2 * size + 1) * (2 * size + 1));
+                    for (stencil_j = -size; stencil_j <= size; stencil_j++)
+                    {
+                        for (stencil_k = -size; stencil_k <= size; stencil_k++)
+                        {
+                            t_r += p[CONV(j + stencil_j, k + stencil_k, width)].r;
+                            t_g += p[CONV(j + stencil_j, k + stencil_k, width)].g;
+                            t_b += p[CONV(j + stencil_j, k + stencil_k, width)].b;
+                        }
+                    }
+
+                    new[CONV(j, k, width)].r = t_r / ((2 * size + 1) * (2 * size + 1));
+                    new[CONV(j, k, width)].g = t_g / ((2 * size + 1) * (2 * size + 1));
+                    new[CONV(j, k, width)].b = t_b / ((2 * size + 1) * (2 * size + 1));
+                }
             }
         }
 
