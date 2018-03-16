@@ -4,7 +4,10 @@ OBJ_DIR=obj
 
 CC=mpicc
 OMP_FLAG = -fopenmp
-CFLAGS=-I$(HEADER_DIR) -std=gnu99 -g -Wall $(OMP_FLAG)
+I_FLAG = -I$(HEADER_DIR),$(HEADER_DIR)/cuda
+CFLAGS=$(I_FLAG) -std=gnu99 -g -Wall $(OMP_FLAG)
+
+NVCC = $(CUDA_ROOT)/bin/nvcc
 
 LDFLAGS=-lm
 
@@ -107,6 +110,6 @@ gr-ezrun: all
 
 cuda_all: 
 	. ./set_env.sh
-	$(CUDA_ROOT)/bin/nvcc -o bandwidthTest include/cuda/bandwidthTest.cu $(CFLAGS)
-	$(CUDA_ROOT)/bin/nvcc -o deviceQuery src/cuda_deviceQuery.cpp $(CFLAGS)
+	$(NVCC) -o bandwidthTest include/cuda/bandwidthTest.cu $(I_FLAG)
+	$(NVCC) -o deviceQuery src/cuda_deviceQuery.cpp $(I_FLAG)
 
