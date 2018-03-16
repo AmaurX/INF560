@@ -105,10 +105,8 @@ gr-ezrun: all
 	eztrace_convert -o traces/out traces/*log* &&\
 	vite traces/out.trace
 
-setenv:
+cuda_all: 
 	. ./set_env.sh
-
-cuda_all: setenv
-	$(CUDA_ROOT)/bin/nvcc -I. -o bandwidthTest include/cuda/bandwidthTest.cu 
-	$(CUDA_ROOT)/bin/nvcc -I. -o deviceQuery src/cuda_deviceQuery.cpp
+	$(CUDA_ROOT)/bin/nvcc -o bandwidthTest include/cuda/bandwidthTest.cu $(CFLAGS)
+	$(CUDA_ROOT)/bin/nvcc -o deviceQuery src/cuda_deviceQuery.cpp $(CFLAGS)
 
