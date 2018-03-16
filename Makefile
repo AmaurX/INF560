@@ -104,3 +104,11 @@ gr-ezrun: all
 	mpirun -n 8 eztrace -t mpi -o traces ./sobelf 1 images/original/$(IMAGE) \images/processed/$(IMAGE).gif &&\
 	eztrace_convert -o traces/out traces/*log* &&\
 	vite traces/out.trace
+
+setenv:
+	. ./set_env.sh
+
+cuda_all: setenv
+	$(CUDA_ROOT)/bin/nvcc -I. -o bandwidthTest include/cuda/bandwidthTest.cu 
+	$(CUDA_ROOT)/bin/nvcc -I. -o deviceQuery src/cuda_deviceQuery.cpp
+
