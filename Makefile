@@ -4,7 +4,7 @@ OBJ_DIR=obj
 
 CC=mpicc
 OMP_FLAG = -fopenmp
-I_FLAG = -I$(HEADER_DIR),$(HEADER_DIR)/cuda
+I_FLAG = -I$(HEADER_DIR)
 CFLAGS=$(I_FLAG) -std=gnu99 -g -Wall $(OMP_FLAG)
 
 

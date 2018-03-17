@@ -310,7 +310,7 @@ int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int
         createCountsDisplacements(frameHeight, frameWidth, sizeof(pixel), groupSize, &recvCountsTab, &displacementsTab);
 #if CENTRAL_CUDA_GRAY_FILTER
         // no work with slaves
-        cuda_gray_filter(pixelTab, frameHeight*frameWidth, 0);
+        cuda_gray_filter(pixelTab, frameHeight * frameWidth, 0);
 
         //for next data processing
 #if DISTRIBUTED_BLUR_FILTER
@@ -390,9 +390,12 @@ void processFrameAlone(int frameHeight, int frameWidth, struct pixel *pixelTab)
 #else
     int lineMin = 0;
     int lineMax = frameHeight;
-    // partial filter 1 on a region of pixelTab applied to all frame
+// partial filter 1 on a region of pixelTab applied to all frame
+#if USE_CUDA
     cuda_gray_filter(pixelTab, frameHeight * frameWidth, 0);
-    // lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+#else
+    lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+#endif
     central_blur_filter(pixelTab, frameHeight, frameWidth, 5, 20);
     // partial filter 3
     lined_sobelf(pixelTab, frameHeight, frameWidth, lineMin, lineMax);

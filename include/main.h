@@ -17,7 +17,7 @@
 #define USE_METRICS 0
 
 #ifdef _OPENMP
-#define USE_OMP 1
+#define USE_OMP 0
 #else
 #define USE_OMP 0
 #endif

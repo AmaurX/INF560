@@ -11,9 +11,12 @@ sobelf
 # Keep one reference version of the processed images in ref-processed
 # Ignore all other processed images 
 images/processed
+images/test
 results/out.csv
 
 # Ignore doc output
 doc/
+
+benchmarks/out
 
 

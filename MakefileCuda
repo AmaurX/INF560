@@ -59,7 +59,7 @@ $(OBJ_DIR)/cuda_filters.o: $(SRC_DIR)/cuda_filters.cu $(MAIN_H)
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c $(MAIN_H)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-sobelf:$(OBJ) $(HEADERS)
+sobelf:clean $(OBJ) $(HEADERS)
 	$(CXX) -o $@ $(OBJ) $(LDFLAGS) -lgomp $(CUDA_NO_DEPREC)
 
 debug:
