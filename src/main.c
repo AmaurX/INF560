@@ -22,8 +22,13 @@
 #include "tests.h"
 #include "main.h"
 
+#if USE_CUDA
+#include "cuda_filters.h"
+#endif
+
 int main(int argc, char **argv)
 {
+
     char *input_filename;
     char *output_filename;
 
@@ -53,7 +58,16 @@ int main(int argc, char **argv)
     if (mode == MODE_TEST)
     {
         if (rank == 0)
+        {
+            printf("// of %s\n"
+                   "OMP:%d\n"
+                   "CUDA:%d\n",
+                   input_filename, USE_OMP, USE_CUDA);
+#if USE_CUDA
+            cuda_test();
+#endif
             test();
+        }
     }
     else if (mode == MODE_SEQUENTIAL)
     {
@@ -104,6 +118,6 @@ int dbprintf(char *format_string, ...)
     va_end(args);
     return a;
 #else
-    return 0;
+        return 0;
 #endif
 }

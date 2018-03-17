@@ -19,7 +19,7 @@ int parallel_process(char *input_filename, char *output_filename)
 	/// Size of the work group
 	int groupSize;
 	/// Used to determine the role of the current process
-	enum role groupRole;
+	// enum role groupRole;
 	/// Group communicator ( MPI_COMM_NULL if master )
 	MPI_Comm groupComm;
 

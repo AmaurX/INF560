@@ -6,7 +6,8 @@ CC=mpicc
 OMP_FLAG = -fopenmp
 CFLAGS=-I$(HEADER_DIR) -std=gnu99 -g -Wall $(OMP_FLAG)
 
-LDFLAGS=-lm
+LDFLAGS=-lm -
+LD_CUDAFLAGS=-lcudart -L/apps/CUDA/cuda-5.0/lib64/
 
 # inutile
 # SRC= dgif_lib.c \
@@ -60,6 +61,9 @@ $(OBJ_DIR):
 
 #main_h is a prerequisite as it contains preproc macros
 # Compilation should therefore be re-done when it changes
+$(OBJ_DIR)/cuda_filters.o: $(SRC_DIR)/cuda_filters.cu $(MAIN_H)
+	$(NVCC) $(I_FLAG) -c $< -o $@
+
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.c $(MAIN_H)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
@@ -75,7 +79,7 @@ doc:
 	doxygen doxy/Doxyfile.conf
 
 IMAGE = totoro.gif
-# IMAGE = porsche.gif
+# IMAGE = fire.gif
 
 test: all
 	mpirun sobelf 2 images/original/$(IMAGE) images/processed/$(IMAGE)
@@ -107,6 +111,6 @@ gr-ezrun: all
 
 cuda_all: 
 	. ./set_env.sh
-	$(CUDA_ROOT)/bin/nvcc -o bandwidthTest include/cuda/bandwidthTest.cu $(CFLAGS)
-	$(CUDA_ROOT)/bin/nvcc -o deviceQuery src/cuda_deviceQuery.cpp $(CFLAGS)
+	$(CUDA_ROOT)/bin/nvcc -o bandwidthTest include/cuda/bandwidthTest.cu -I $(HEADERS) -g -Wall $(OMP_FLAG)
+	$(CUDA_ROOT)/bin/nvcc -o deviceQuery src/cuda_deviceQuery.cpp -I $(HEADERS) -g -Wall $(OMP_FLAG)
 

@@ -11,9 +11,10 @@
 #include <omp.h>
 
 #include "structs.h"
+#ifndef OVERWRITE_SOBELF_SETTINGS
 #define SOBELF_DEBUG 0
-#define DEBUG_PRINTS 1
-#define USE_METRICS 1
+#define DEBUG_PRINTS 0
+#define USE_METRICS 0
 
 #ifdef _OPENMP
 #define USE_OMP 1
@@ -22,9 +23,12 @@
 #endif
 
 #define USE_SLAVES 01
-#define USE_CUDA 0
+#define USE_CUDA 01
+
+#define CENTRAL_CUDA_GRAY_FILTER 0
 
 #define DISTRIBUTED_BLUR_FILTER 0
+#endif
 
 #define MODE_SEQUENTIAL 0
 #define MODE_PARALLEL 1

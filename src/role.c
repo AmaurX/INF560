@@ -5,6 +5,7 @@
 #include "filters.h"
 #include <time.h>
 #include <mpi.h>
+#include "cuda_filters.h"
 
 #include "role.h"
 
@@ -23,7 +24,7 @@ void masterLoop(int *groupMasterList, int numberOfGroupMaster, animated_gif *ima
     int worldRank, groupSize;
     MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
     MPI_Comm_size(groupComm, &groupSize);
-    int count = 0;
+    // int count = 0;
     int numberOfImages = image->n_images;
 
     /// allows tasks and pixels-related send to have different tags
@@ -240,12 +241,16 @@ void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProces
 
         //building count and displacement in terms of bytes
 
+#if CENTRAL_CUDA_GRAY_FILTER
+// nothing... waiting for input for sobel filter
+#else
+
         // partial filter 1 on a region of pixelTab
         lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
 
         // in-place collection of computed data
         MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
-
+#endif
 #if DISTRIBUTED_BLUR_FILTER
         // partial filter 2
         MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
@@ -272,7 +277,7 @@ void slaveGroupLoop(MPI_Comm groupComm, animated_gif *image, int *imagesToProces
 int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int groupIndex, struct task *taskOut, struct pixel **pixelTabOut)
 {
     // waitForDebug();
-    double startWorkTime, endWorkTime, endTotalTime, totalWorkDuration = 0;
+    double startWorkTime, endWorkTime, totalWorkDuration = 0;
     int groupSize, groupRank = 0;
     MPI_Comm_size(groupComm, &groupSize);
 
@@ -289,45 +294,59 @@ int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int
     // END OF RECEIVING PHASE
 
 #if USE_SLAVES
-    // finding region
-    int lineMin, lineMax;
-    getLineWindow(frameHeight, groupSize, 0, &lineMin, &lineMax);
-    int *recvCountsTab, *displacementsTab;
-    createCountsDisplacements(frameHeight, frameWidth, sizeof(pixel), groupSize, &recvCountsTab, &displacementsTab);
 
-    // partial filter 1 on a region of pixelTab
-    lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+    if (groupSize == 1)
+    {
+        // no need to do complicated stuff, groupmaster is alone ...
+        // As if USE_SLAVES = 0
+        processFrameAlone(frameHeight, frameWidth, pixelTab);
+    }
+    else
+    {
+        // finding region
+        int lineMin, lineMax;
+        getLineWindow(frameHeight, groupSize, 0, &lineMin, &lineMax);
+        int *recvCountsTab, *displacementsTab;
+        createCountsDisplacements(frameHeight, frameWidth, sizeof(pixel), groupSize, &recvCountsTab, &displacementsTab);
+#if CENTRAL_CUDA_GRAY_FILTER
+        // no work with slaves
+        cuda_gray_filter(pixelTab, frameHeight*frameWidth, 0);
 
-    // in-place collection of computed data
-    MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
-
+        //for next data processing
 #if DISTRIBUTED_BLUR_FILTER
-    // partial filter 2
-    MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
+        //need to bcast solution
+        MPI_Bcast(pixelTab, numberOfPixels * sizeof(struct pixel), MPI_BYTE, 0, groupComm);
 #else
-    // CENTRAL filter for now
-    central_blur_filter(pixelTab, frameHeight, frameWidth, 5, 20);
-    MPI_Bcast(pixelTab, numberOfPixels * sizeof(struct pixel), MPI_BYTE, 0, groupComm);
+        //nothiing !
 #endif
 
-    // partial filter 3
-    lined_sobelf(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
-
-    //pixel tab is a tab of pixel, therefore the addition is pixel* + int
-    MPI_Gatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, 0, groupComm);
-
-    free(recvCountsTab);
-    free(displacementsTab);
 #else
-    animated_gif singleFrameGif;
-    singleFrameGif.n_images = 1;
-    singleFrameGif.height = &frameHeight;
-    singleFrameGif.width = &frameWidth;
-    singleFrameGif.p = &(pixelTab);
-    // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
-    apply_gray_filter(&singleFrameGif);
-    apply_blur_filter(&singleFrameGif, 5, 20);
-    apply_sobel_filter(&singleFrameGif);
+        // partial filter 1 on a region of pixelTab
+        lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+
+        // in-place collection of computed data
+        MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
+#endif
+#if DISTRIBUTED_BLUR_FILTER
+        // partial filter 2
+        MPI_Allgatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, groupComm);
+#else
+        // CENTRAL filter for now
+        central_blur_filter(pixelTab, frameHeight, frameWidth, 5, 20);
+        MPI_Bcast(pixelTab, numberOfPixels * sizeof(struct pixel), MPI_BYTE, 0, groupComm);
+#endif
+
+        // partial filter 3
+        lined_sobelf(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+
+        //pixel tab is a tab of pixel, therefore the addition is pixel* + int
+        MPI_Gatherv(MPI_IN_PLACE, recvCountsTab[groupRank], MPI_BYTE, pixelTab, recvCountsTab, displacementsTab, MPI_BYTE, 0, groupComm);
+
+        free(recvCountsTab);
+        free(displacementsTab);
+    }
+#else
+    processFrameAlone(frameHeight, frameWidth, pixelTab);
 #endif
 
     if (taskOut != NULL)
@@ -353,6 +372,31 @@ int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int
     }
 
     return 0;
+}
+
+void processFrameAlone(int frameHeight, int frameWidth, struct pixel *pixelTab)
+{
+#if 0
+    // old processing, don't use openMP
+    animated_gif singleFrameGif;
+    singleFrameGif.n_images = 1;
+    singleFrameGif.height = &frameHeight;
+    singleFrameGif.width = &frameWidth;
+    singleFrameGif.p = &(pixelTab);
+    // APPLY FILTERS -- ONLY GROUPMASTER IS WORKING FOR NOW !
+    apply_gray_filter(&singleFrameGif);
+    apply_blur_filter(&singleFrameGif, 5, 20);
+    apply_sobel_filter(&singleFrameGif);
+#else
+    int lineMin = 0;
+    int lineMax = frameHeight;
+    // partial filter 1 on a region of pixelTab applied to all frame
+    cuda_gray_filter(pixelTab, frameHeight * frameWidth, 0);
+    // lined_gray_filter(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+    central_blur_filter(pixelTab, frameHeight, frameWidth, 5, 20);
+    // partial filter 3
+    lined_sobelf(pixelTab, frameHeight, frameWidth, lineMin, lineMax);
+#endif
 }
 
 void getLineWindow(int frameHeight, int groupSize, int groupRank, int *lineMinOut, int *lineMaxOut)

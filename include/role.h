@@ -31,3 +31,5 @@ void createCountsDisplacements(int frameHeight, int frameWidth, int pixelSize, i
 void getLineWindow(int frameHeight, int groupSize, int groupRank, int *lineMinOut, int *lineMaxOut);
 
 int groupMasterizeFrame(MPI_Comm groupComm, animated_gif *image, int iFrame, int groupIndex, struct task *taskOut, struct pixel** pixelTabOut);
+
+void processFrameAlone(int frameHeight, int frameWidth, struct pixel *pixelTab);

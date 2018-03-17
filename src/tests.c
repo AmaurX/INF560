@@ -142,6 +142,7 @@ void testLineRepartition()
                 {
                     printf("%d ", displacementsTab[iProc]);
                 }
+                printf("\n");
 
 
             }
