@@ -19,7 +19,7 @@ The objective is to make the most of all computing resources available to shorte
 
 ## Structure
 
-Source files are locaated into `src` and `include` folders. `include/cuda` contains the set of helper files needed to compile Cuda functions.
+Source files are located into `src` and `include` folders. `include/cuda` contains the set of helper files needed to compile Cuda functions.
 
 ## Build & run
 
@@ -36,3 +36,8 @@ The `benchmarks` folder contains assets to massively time executions for statica
 The `images/original/` folder contains examples images to run the project on. 
 
 
+## Settings
+`include/main.h` defines all the settings macros, including
+- USE_CUDA
+- USE_OMP
+- USE_SLAVES

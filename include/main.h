@@ -17,7 +17,8 @@
 #define USE_METRICS 0
 
 #ifdef _OPENMP
-#define USE_OMP 0
+// set this to 1 to enable
+#define USE_OMP 1
 #else
 #define USE_OMP 0
 #endif
