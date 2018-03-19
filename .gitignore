@@ -21,6 +21,7 @@ benchmarks/out
 
 
 images/thg
-resultes/
 results/
 benchmarks/anlysis.ods
+traces/
+res.csv
