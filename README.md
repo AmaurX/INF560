@@ -23,6 +23,11 @@ Source files are locaated into `src` and `include` folders. `include/cuda` conta
 
 ## Build & run
 
+NOTE: Before building anything, make sure your env variables are set by :
+```sh
+. ./set_env.sh
+```
+
 The build rules are defined in `Makefile`. The build computer is expected to have the setup of INF560 courses. 
 A compatibility Makefile for computer without NVCC is given in `MakeWithoutCuda`. It is non-working but insightful
 
