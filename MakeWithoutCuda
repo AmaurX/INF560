@@ -1,0 +1,77 @@
+SRC_DIR=src
+HEADER_DIR=include
+OBJ_DIR=obj
+
+CC=mpicc
+OMP_FLAG = -fopenmp
+I_FLAG = -I$(HEADER_DIR)
+CFLAGS=$(I_FLAG) -std=gnu99 -g -Wall $(OMP_FLAG)
+
+
+LDFLAGS=-lm
+
+# inutile
+# SRC= dgif_lib.c \
+# 	egif_lib.c \
+# 	gif_err.c \
+# 	gif_font.c \
+# 	gif_hash.c \
+# 	gifalloc.c \
+# 	main.c \
+# 	tests.c \
+# 	openbsd-reallocarray.c \
+# 	quantize.c \
+# 	gif_utils.c \
+# 	filters.c \
+# 	parallel.c \
+# 	sequential.c \
+# 	role.c
+
+OBJ= $(OBJ_DIR)/dgif_lib.o \
+	$(OBJ_DIR)/egif_lib.o \
+	$(OBJ_DIR)/gif_err.o \
+	$(OBJ_DIR)/gif_font.o \
+	$(OBJ_DIR)/gif_hash.o \
+	$(OBJ_DIR)/gifalloc.o \
+	$(OBJ_DIR)/main.o \
+	$(OBJ_DIR)/tests.o \
+	$(OBJ_DIR)/openbsd-reallocarray.o \
+	$(OBJ_DIR)/quantize.o \
+	$(OBJ_DIR)/gif_utils.o \
+	$(OBJ_DIR)/filters.o \
+	$(OBJ_DIR)/parallel.o \
+	$(OBJ_DIR)/sequential.o \
+	$(OBJ_DIR)/role.o\
+	$(OBJ_DIR)/structs.o
+
+MAIN_H = $(HEADER_DIR)/main.h
+
+HEADERS =	$(HEADER_DIR)/filters.h \
+			$(HEADER_DIR)/gif_hash.h \
+			$(HEADER_DIR)/gif_lib_private.h \
+			$(HEADER_DIR)/gif_utils.h \
+			$(HEADER_DIR)/main.h \
+			$(HEADER_DIR)/structs.h \
+			$(HEADER_DIR)/tests.h
+
+
+all: $(OBJ_DIR) sobelf
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIR)
+
+#main_h is a prerequisite as it contains preproc macros
+# Compilation should therefore be re-done when it changes
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.c $(MAIN_H)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+sobelf:$(OBJ) $(HEADERS)
+	$(CC) $(CFLAGS)  -o $@ $(OBJ) $(LDFLAGS)
+
+.PHONY: clean
+
+clean:
+	rm -f sobelf $(OBJ)
+
+
