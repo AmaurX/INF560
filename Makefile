@@ -48,6 +48,8 @@ HEADERS =	$(HEADER_DIR)/filters.h \
 
 .PHONY:truc debug clean test seq massive
 
+all: sobelf
+
 # main_h is a prerequisite as it contains preproc macros
 # Compilation should therefore be re-done when it changes
 $(OBJ_DIR)/cuda_filters.o: $(SRC_DIR)/cuda_filters.cu $(MAIN_H)
